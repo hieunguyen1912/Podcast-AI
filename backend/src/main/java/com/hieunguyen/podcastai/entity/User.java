@@ -46,9 +46,6 @@ public class User extends AuditableEntity {
     @Column(name = "last_name", length = 50)
     private String lastName;
     
-    @Column(name = "display_name", length = 100)
-    private String displayName;
-    
     @Column(name = "avatar_url")
     private String avatarUrl;
     
@@ -57,15 +54,6 @@ public class User extends AuditableEntity {
     
     @Column(name = "phone_number", length = 20)
     private String phoneNumber;
-    
-    @Column(name = "bio", length = 500)
-    private String bio;
-    
-    @Column(name = "location", length = 100)
-    private String location;
-    
-    @Column(name = "website_url")
-    private String websiteUrl;
     
     @Enumerated(EnumType.STRING)
     @Column(name = "role", nullable = false)
@@ -81,27 +69,7 @@ public class User extends AuditableEntity {
     @Column(name = "phone_verified", nullable = false)
     private Boolean phoneVerified = false;
     
-    @Column(name = "last_login_at")
-    private java.time.Instant lastLoginAt;
-    
-    @Column(name = "login_count")
-    private Integer loginCount = 0;
-    
-    // User preferences
-    @Column(name = "default_language", length = 10)
-    private String defaultLanguage = "en";
-    
-    @Column(name = "timezone", length = 50)
-    private String timezone = "UTC";
-    
-    @Column(name = "notification_email", nullable = false)
-    private Boolean notificationEmail = true;
-    
-    @Column(name = "notification_push", nullable = false)
-    private Boolean notificationPush = true;
-    
     // Relationships
-
     @OneToMany(mappedBy = "user", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
     private List<Podcast> podcasts = new ArrayList<>();
     

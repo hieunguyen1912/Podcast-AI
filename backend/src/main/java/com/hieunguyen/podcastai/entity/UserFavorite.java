@@ -1,6 +1,8 @@
 package com.hieunguyen.podcastai.entity;
 
 import com.hieunguyen.podcastai.entity.base.AuditableEntity;
+import com.hieunguyen.podcastai.enums.FavoriteType;
+
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -27,12 +29,9 @@ public class UserFavorite extends AuditableEntity {
     @Column(name = "notes", length = 500)
     private String notes;
     
-    // Relationships
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "user_id", nullable = false)
     private User user;
     
-    public enum FavoriteType {
-        PODCAST, EPISODE, PLAYLIST, NEWS_SOURCE
-    }
+    
 }

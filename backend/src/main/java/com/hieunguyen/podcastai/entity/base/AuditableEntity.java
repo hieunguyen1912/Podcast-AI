@@ -5,15 +5,23 @@ import jakarta.persistence.MappedSuperclass;
 import jakarta.persistence.Version;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
+import org.springframework.data.annotation.CreatedBy;
+import org.springframework.data.annotation.LastModifiedBy;
+import org.springframework.data.jpa.domain.support.AuditingEntityListener;
+
+import jakarta.persistence.EntityListeners;
 
 @MappedSuperclass
 @Data
 @EqualsAndHashCode(callSuper = true)
+@EntityListeners(AuditingEntityListener.class)
 public abstract class AuditableEntity extends BaseEntity {
     
+    @CreatedBy
     @Column(name = "created_by", nullable = false, updatable = false, length = 50)
     private String createdBy;
     
+    @LastModifiedBy
     @Column(name = "updated_by", length = 50)
     private String updatedBy;
     

@@ -2,6 +2,7 @@ package com.hieunguyen.podcastai.entity;
 
 import com.hieunguyen.podcastai.entity.base.AuditableEntity;
 import com.hieunguyen.podcastai.enums.PodcastStatus;
+import com.hieunguyen.podcastai.enums.Visibility;
 
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
@@ -10,7 +11,6 @@ import lombok.Data;
 import lombok.EqualsAndHashCode;
 import lombok.NoArgsConstructor;
 
-import java.time.Duration;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -41,7 +41,7 @@ public class Podcast extends AuditableEntity {
     
     @Enumerated(EnumType.STRING)
     @Column(name = "visibility", nullable = false)
-    private PodcastVisibility visibility = PodcastVisibility.PRIVATE;
+    private Visibility visibility = Visibility.PRIVATE;
     
     @Column(name = "is_featured", nullable = false)
     private Boolean isFeatured = false;
@@ -94,8 +94,4 @@ public class Podcast extends AuditableEntity {
     // @OneToMany(mappedBy = "podcast", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
     // private List<PodcastGeneration> generations = new ArrayList<>();
     
-    
-    public enum PodcastVisibility {
-        PUBLIC, PRIVATE, UNLISTED
-    }
 }

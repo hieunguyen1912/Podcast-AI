@@ -32,9 +32,6 @@ public class Category extends AuditableEntity {
     @Column(name = "icon_url")
     private String iconUrl;
     
-    @Column(name = "color", length = 7)
-    private String color;
-    
     @Column(name = "sort_order")
     private Integer sortOrder = 0;
     

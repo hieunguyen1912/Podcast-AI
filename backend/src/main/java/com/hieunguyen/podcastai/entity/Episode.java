@@ -92,6 +92,4 @@ public class Episode extends AuditableEntity {
     
     // @OneToMany(mappedBy = "episode", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
     // private List<EpisodePlay> plays = new ArrayList<>();
-    
-    
 }

@@ -1,6 +1,9 @@
 package com.hieunguyen.podcastai.entity;
 
 import com.hieunguyen.podcastai.entity.base.AuditableEntity;
+import com.hieunguyen.podcastai.enums.Visibility;
+import com.hieunguyen.podcastai.enums.PlaylistStatus;
+
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -31,12 +34,20 @@ public class Playlist extends AuditableEntity {
     
     @Enumerated(EnumType.STRING)
     @Column(name = "visibility", nullable = false)
-    private PlaylistVisibility visibility = PlaylistVisibility.PRIVATE;
+    @Builder.Default
+    private Visibility visibility = Visibility.PRIVATE;
+    
+    @Enumerated(EnumType.STRING)
+    @Column(name = "status", nullable = false)
+    @Builder.Default
+    private PlaylistStatus status = PlaylistStatus.ACTIVE;
     
     @Column(name = "sort_order")
+    @Builder.Default
     private Integer sortOrder = 0;
     
     @Column(name = "episode_count")
+    @Builder.Default
     private Integer episodeCount = 0;
     
     // Relationships
@@ -45,9 +56,6 @@ public class Playlist extends AuditableEntity {
     private User user;
     
     @OneToMany(mappedBy = "playlist", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
+    @Builder.Default
     private List<PlaylistEpisode> playlistEpisodes = new ArrayList<>();
-    
-    public enum PlaylistVisibility {
-        PUBLIC, PRIVATE, UNLISTED
-    }
 }
