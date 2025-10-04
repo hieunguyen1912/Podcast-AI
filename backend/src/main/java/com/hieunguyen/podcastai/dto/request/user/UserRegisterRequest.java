@@ -1,4 +1,4 @@
-package com.hieunguyen.podcastai.dto.request;
+package com.hieunguyen.podcastai.dto.request.user;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
 import jakarta.validation.constraints.*;

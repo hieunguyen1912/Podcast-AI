@@ -1,4 +1,4 @@
-package com.hieunguyen.podcastai.dto.request;
+package com.hieunguyen.podcastai.dto.request.user;
 
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;

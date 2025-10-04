@@ -14,8 +14,8 @@ import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 
 import com.hieunguyen.podcastai.config.SecurityConfig;
-import com.hieunguyen.podcastai.dto.request.UserLoginRequest;
-import com.hieunguyen.podcastai.dto.request.UserRegisterRequest;
+import com.hieunguyen.podcastai.dto.request.user.UserLoginRequest;
+import com.hieunguyen.podcastai.dto.request.user.UserRegisterRequest;
 import com.hieunguyen.podcastai.dto.response.TokenDto;
 import com.hieunguyen.podcastai.dto.response.UserDto;
 import com.hieunguyen.podcastai.dto.response.UserLoginResponse;
@@ -81,7 +81,7 @@ public class AuthServiceImpl implements AuthService {
             user.setRole(UserRole.USER);
             user.setStatus(UserStatus.ACTIVE);
             user.setEmailVerified(false);
-            user.setPhoneVerified(false);
+            user.setPhoneNumber(request.getPhoneNumber());
             
             // Save user
             User savedUser = userRepository.save(user);

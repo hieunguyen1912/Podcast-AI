@@ -1,4 +1,4 @@
-package com.hieunguyen.podcastai.dto.request;
+package com.hieunguyen.podcastai.dto.request.user;
 
 import com.hieunguyen.podcastai.enums.FavoriteType;
 import jakarta.validation.constraints.NotNull;

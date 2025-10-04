@@ -1,8 +1,8 @@
 package com.hieunguyen.podcastai.service.impl;
 
-import com.hieunguyen.podcastai.dto.request.AvatarUploadRequest;
-import com.hieunguyen.podcastai.dto.request.PasswordChangeRequest;
-import com.hieunguyen.podcastai.dto.request.UserUpdateRequest;
+import com.hieunguyen.podcastai.dto.request.user.AvatarUploadRequest;
+import com.hieunguyen.podcastai.dto.request.user.PasswordChangeRequest;
+import com.hieunguyen.podcastai.dto.request.user.UserUpdateRequest;
 import com.hieunguyen.podcastai.dto.response.UserDto;
 import com.hieunguyen.podcastai.entity.User;
 import com.hieunguyen.podcastai.enums.ErrorCode;

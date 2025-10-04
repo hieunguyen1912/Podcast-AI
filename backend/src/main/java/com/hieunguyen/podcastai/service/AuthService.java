@@ -1,7 +1,7 @@
 package com.hieunguyen.podcastai.service;
 
-import com.hieunguyen.podcastai.dto.request.UserLoginRequest;
-import com.hieunguyen.podcastai.dto.request.UserRegisterRequest;
+import com.hieunguyen.podcastai.dto.request.user.UserLoginRequest;
+import com.hieunguyen.podcastai.dto.request.user.UserRegisterRequest;
 import com.hieunguyen.podcastai.dto.response.TokenDto;
 import com.hieunguyen.podcastai.dto.response.UserLoginResponse;
 import com.hieunguyen.podcastai.dto.response.UserRegisterResponse;

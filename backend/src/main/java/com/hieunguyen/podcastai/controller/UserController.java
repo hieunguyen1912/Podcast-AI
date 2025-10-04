@@ -11,9 +11,9 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
-import com.hieunguyen.podcastai.dto.request.AvatarUploadRequest;
-import com.hieunguyen.podcastai.dto.request.PasswordChangeRequest;
-import com.hieunguyen.podcastai.dto.request.UserUpdateRequest;
+import com.hieunguyen.podcastai.dto.request.user.AvatarUploadRequest;
+import com.hieunguyen.podcastai.dto.request.user.PasswordChangeRequest;
+import com.hieunguyen.podcastai.dto.request.user.UserUpdateRequest;
 import com.hieunguyen.podcastai.dto.response.ApiResponse;
 import com.hieunguyen.podcastai.dto.response.UserDto;
 import com.hieunguyen.podcastai.service.UserService;

@@ -35,7 +35,6 @@ public class Category extends AuditableEntity {
     @Column(name = "sort_order")
     private Integer sortOrder = 0;
     
-    // Relationships
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "parent_category_id")
     private Category parentCategory;

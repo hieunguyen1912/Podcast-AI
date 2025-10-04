@@ -63,23 +63,10 @@ public class User extends AuditableEntity {
     @Column(name = "email_verified", nullable = false)
     private Boolean emailVerified = false;
     
-    @Column(name = "phone_verified", nullable = false)
-    private Boolean phoneVerified = false;
-    
-    // Relationships
-    @OneToMany(mappedBy = "user", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
-    private List<Podcast> podcasts = new ArrayList<>();
-    
     @OneToMany(mappedBy = "user", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
     private List<Playlist> playlists = new ArrayList<>();
     
     @OneToMany(mappedBy = "user", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
     private List<UserFavorite> favorites = new ArrayList<>();
-    
-    // @OneToMany(mappedBy = "user", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
-    // private List<NewsSource> newsSources = new ArrayList<>();
-    
-    // @OneToMany(mappedBy = "user", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
-    // private List<PodcastGeneration> podcastGenerations = new ArrayList<>();
     
 }

@@ -42,20 +42,31 @@ public class Playlist extends AuditableEntity {
     @Builder.Default
     private PlaylistStatus status = PlaylistStatus.ACTIVE;
     
-    @Column(name = "sort_order")
+    @Column(name = "total_audio_files_count")
     @Builder.Default
-    private Integer sortOrder = 0;
+    private Integer totalAudioFilesCount = 0;
     
-    @Column(name = "episode_count")
-    @Builder.Default
-    private Integer episodeCount = 0;
-    
-    // Relationships
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "user_id", nullable = false)
     private User user;
-    
-    @OneToMany(mappedBy = "playlist", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
+
+    @ManyToMany
+    @JoinTable(
+        name = "playlist_audio_files",
+        joinColumns = @JoinColumn(name = "playlist_id"),
+        inverseJoinColumns = @JoinColumn(name = "audio_file_id")
+    )
     @Builder.Default
-    private List<PlaylistEpisode> playlistEpisodes = new ArrayList<>();
+    private List<AudioFile> audioFiles = new ArrayList<>();
+
+
+    public void addAudioFile(AudioFile audioFile) {
+        this.audioFiles.add(audioFile);
+        audioFile.getPlaylists().add(this);
+    }
+    
+    public void removeAudioFile(AudioFile audioFile) {
+        this.audioFiles.remove(audioFile);
+        audioFile.getPlaylists().remove(this);
+    }
 }

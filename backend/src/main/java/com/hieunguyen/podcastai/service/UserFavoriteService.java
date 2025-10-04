@@ -1,6 +1,6 @@
 package com.hieunguyen.podcastai.service;
 
-import com.hieunguyen.podcastai.dto.request.UserFavoriteRequest;
+import com.hieunguyen.podcastai.dto.request.user.UserFavoriteRequest;
 import com.hieunguyen.podcastai.dto.response.UserFavoriteDto;
 
 import java.util.List;

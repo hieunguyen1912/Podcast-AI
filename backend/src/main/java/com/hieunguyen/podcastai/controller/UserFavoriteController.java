@@ -1,6 +1,6 @@
 package com.hieunguyen.podcastai.controller;
 
-import com.hieunguyen.podcastai.dto.request.UserFavoriteRequest;
+import com.hieunguyen.podcastai.dto.request.user.UserFavoriteRequest;
 import com.hieunguyen.podcastai.dto.response.ApiResponse;
 import com.hieunguyen.podcastai.dto.response.UserFavoriteDto;
 import com.hieunguyen.podcastai.service.UserFavoriteService;
