@@ -28,6 +28,13 @@ public enum ErrorCode {
     EMAIL_ALREADY_EXISTS(1019, "Email already exists", HttpStatus.BAD_REQUEST),
     INVALID_PASSWORD(1020, "Invalid current password", HttpStatus.BAD_REQUEST),
     PASSWORD_MISMATCH(1021, "Password confirmation does not match", HttpStatus.BAD_REQUEST),
+    
+    // TTS Config Error Codes
+    TTS_CONFIG_NOT_FOUND(2001, "TTS configuration not found", HttpStatus.NOT_FOUND),
+    TTS_CONFIG_ACCESS_DENIED(2002, "Access denied to TTS configuration", HttpStatus.FORBIDDEN),
+    TTS_CONFIG_NAME_EXISTS(2003, "TTS configuration name already exists", HttpStatus.BAD_REQUEST),
+    TTS_CONFIG_NO_DEFAULT(2004, "No default TTS configuration found", HttpStatus.NOT_FOUND),
+    TTS_CONFIG_INVALID_PARAMETERS(2005, "Invalid TTS configuration parameters", HttpStatus.BAD_REQUEST),
     ;
 
     private final int code;
