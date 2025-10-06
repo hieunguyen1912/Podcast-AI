@@ -35,6 +35,27 @@ public enum ErrorCode {
     TTS_CONFIG_NAME_EXISTS(2003, "TTS configuration name already exists", HttpStatus.BAD_REQUEST),
     TTS_CONFIG_NO_DEFAULT(2004, "No default TTS configuration found", HttpStatus.NOT_FOUND),
     TTS_CONFIG_INVALID_PARAMETERS(2005, "Invalid TTS configuration parameters", HttpStatus.BAD_REQUEST),
+    
+    // Tag Error Codes
+    TAG_NOT_FOUND(3001, "Tag not found", HttpStatus.NOT_FOUND),
+    TAG_NAME_EXISTS(3002, "Tag name already exists", HttpStatus.BAD_REQUEST),
+    TAG_NAME_NOT_FOUND(3003, "Tag not found with name", HttpStatus.NOT_FOUND),
+    TAG_INVALID_USAGE_COUNT(3004, "Invalid usage count operation", HttpStatus.BAD_REQUEST),
+    TAG_TRENDING_STATUS_UPDATE_FAILED(3005, "Failed to update trending status", HttpStatus.BAD_REQUEST),
+    
+    // Category Error Codes
+    CATEGORY_NOT_FOUND(4001, "Category not found", HttpStatus.NOT_FOUND),
+    CATEGORY_NAME_EXISTS(4002, "Category name already exists", HttpStatus.BAD_REQUEST),
+    CATEGORY_SLUG_EXISTS(4003, "Category slug already exists", HttpStatus.BAD_REQUEST),
+    CATEGORY_NAME_NOT_FOUND(4004, "Category not found with name", HttpStatus.NOT_FOUND),
+    CATEGORY_SLUG_NOT_FOUND(4005, "Category not found with slug", HttpStatus.NOT_FOUND),
+    CATEGORY_PARENT_NOT_FOUND(4006, "Parent category not found", HttpStatus.NOT_FOUND),
+    CATEGORY_HAS_SUBCATEGORIES(4007, "Cannot delete category with subcategories", HttpStatus.BAD_REQUEST),
+    CATEGORY_HIERARCHY_UPDATE_FAILED(4008, "Failed to update category hierarchy", HttpStatus.BAD_REQUEST),
+    CATEGORY_REORDER_FAILED(4009, "Failed to reorder categories", HttpStatus.BAD_REQUEST),
+    CATEGORY_MOVE_FAILED(4010, "Failed to move category", HttpStatus.BAD_REQUEST),
+    CATEGORY_SELF_REFERENCE(4011, "Cannot set category as its own parent", HttpStatus.BAD_REQUEST),
+    CATEGORY_CIRCULAR_REFERENCE(4012, "Cannot create circular parent-child relationship", HttpStatus.BAD_REQUEST),
     ;
 
     private final int code;

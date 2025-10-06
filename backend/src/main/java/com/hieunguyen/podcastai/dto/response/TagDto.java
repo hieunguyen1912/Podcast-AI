@@ -7,24 +7,20 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 
 import java.time.Instant;
-import java.util.List;
 
 @Data
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
 @JsonInclude(JsonInclude.Include.NON_NULL)
-public class CategoryDto {
+public class TagDto {
     
     private Long id;
     private String name;
     private String description;
-    private String slug;
-    private String iconUrl;
-    private Integer sortOrder;
-    private Long parentCategoryId;
-    private String parentCategoryName;
-    private List<CategoryDto> subCategories;
+    private String color;
+    private Integer usageCount;
+    private Boolean isTrending;
     private Instant createdAt;
     private Instant updatedAt;
     private String createdBy;
