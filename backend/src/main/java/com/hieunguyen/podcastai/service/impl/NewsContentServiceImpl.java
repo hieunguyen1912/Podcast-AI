@@ -70,10 +70,8 @@ public class NewsContentServiceImpl implements NewsContentService {
                 return Collections.emptyList();
             }
             
-            // Process articles
             articles = processArticles(articles);
             
-            // Filter and rank articles
             articles = filterAndRankArticles(articles, newsApiConfig.getMaxArticles());
             
             log.info("Found {} articles for query: {}", articles.size(), query);
@@ -85,9 +83,8 @@ public class NewsContentServiceImpl implements NewsContentService {
         }
     }
     
-    @Override
     @Retryable(value = {Exception.class}, maxAttempts = 2, backoff = @Backoff(delay = 2000))
-    public String getArticleContent(String articleUrl) {
+    private String getArticleContent(String articleUrl) {
         try {
             log.debug("Fetching full content for URL: {}", articleUrl);
         
@@ -118,6 +115,24 @@ public class NewsContentServiceImpl implements NewsContentService {
         } catch (Exception e) {
             log.error("Failed to get article content for URL: {}", articleUrl, e);
             return "Content extraction failed";
+        }
+    }
+    
+    @Override
+    public NewsArticle getArticleWithFullContent(NewsArticle article) {
+        if (article == null || article.getUrl() == null) {
+            return article;
+        }
+        
+        try {
+            log.debug("Fetching full content for article: {}", article.getTitle());
+            String fullContent = getArticleContent(article.getUrl());
+            article.setFullContent(fullContent);
+            log.info("Successfully added full content to article: {}", article.getTitle());
+            return article;
+        } catch (Exception e) {
+            log.error("Failed to get full content for article: {}", article.getTitle(), e);
+            return article;
         }
     }
 
@@ -238,9 +253,8 @@ public class NewsContentServiceImpl implements NewsContentService {
             
             content.append("Summary: ").append(article.getDescription() != null ? article.getDescription() : "No description available").append("\n");
             
-            if (article.getFullContent() != null && !article.getFullContent().isEmpty()) {
-                content.append("Content: ").append(article.getFullContent()).append("\n");
-            }
+            // Note: Full content is not included by default to improve performance
+            // Use getArticleContent() method separately when full content is needed
             
             content.append("\n");
         }
@@ -306,11 +320,6 @@ public class NewsContentServiceImpl implements NewsContentService {
                 // Set word count
                 if (article.getDescription() != null) {
                     article.setWordCount(article.getDescription().split("\\s+").length);
-                }
-                
-                // Get full content (placeholder implementation)
-                if (article.getUrl() != null) {
-                    article.setFullContent(getArticleContent(article.getUrl()));
                 }
             })
             .collect(Collectors.toList());

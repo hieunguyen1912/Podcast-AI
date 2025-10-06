@@ -91,20 +91,20 @@ public class NewsController {
         }
     }
     
-    @GetMapping("/content")
+    @PostMapping("/content")
     @PreAuthorize("hasRole('USER')")
-    public ResponseEntity<ApiResponse<String>> getArticleContent(
-            @RequestParam @NotBlank(message = "Article URL cannot be blank") String url) {
+    public ResponseEntity<ApiResponse<NewsArticle>> getArticleWithFullContent(
+            @Valid @RequestBody NewsArticle article) {
         
-        log.info("Getting article content for URL: {}", url);
+        log.info("Getting full content for article: {}", article.getTitle());
         
         try {
-            String content = newsContentService.getArticleContent(url);
-            return ResponseEntity.ok(ApiResponse.success("Article content retrieved successfully", content));
+            NewsArticle articleWithContent = newsContentService.getArticleWithFullContent(article);
+            return ResponseEntity.ok(ApiResponse.success("Article with full content retrieved successfully", articleWithContent));
         } catch (Exception e) {
-            log.error("Failed to get article content for URL: {}", url, e);
+            log.error("Failed to get full content for article: {}", article.getTitle(), e);
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                    .body(ApiResponse.error("Failed to get article content: " + e.getMessage()));
+                    .body(ApiResponse.error("Failed to get article full content: " + e.getMessage()));
         }
     }
     

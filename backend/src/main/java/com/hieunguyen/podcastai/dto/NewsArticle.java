@@ -55,9 +55,6 @@ public class NewsArticle {
     @AllArgsConstructor
     @JsonIgnoreProperties(ignoreUnknown = true)
     public static class NewsSource {
-        @JsonProperty("id")
-        private String id;
-        
         @JsonProperty("name")
         private String name;
     }

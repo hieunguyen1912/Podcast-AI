@@ -11,7 +11,7 @@ public interface NewsContentService {
     
     List<NewsArticle> searchNews(String query, String language, String sortBy, int pageSize);
     
-    String getArticleContent(String articleUrl);
+    NewsArticle getArticleWithFullContent(NewsArticle article);
     
     List<NewsArticle> getTrendingNews(String category);
     
