@@ -24,6 +24,8 @@ public class NewsApiConfig {
     private String defaultLanguage = "en";
     private String defaultSortBy = "publishedAt";
     private int maxContentLength = 50000;
+    private int contentExtractionTimeout = 30000; // Timeout for content extraction
+    private int maxRetryAttempts = 3; // Max retry attempts for content extraction
     
     @Bean
     public RestTemplate newsApiRestTemplate() {

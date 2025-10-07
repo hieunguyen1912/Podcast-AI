@@ -4,7 +4,6 @@ import com.google.cloud.texttospeech.v1.Voice;
 import com.hieunguyen.podcastai.dto.request.GoogleTtsRequest;
 import com.hieunguyen.podcastai.dto.request.VoiceSettingsRequest;
 import com.hieunguyen.podcastai.dto.response.GoogleTtsResponse;
-
 import com.hieunguyen.podcastai.service.GoogleTtsService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -31,7 +30,12 @@ public class GoogleTtsController {
 
     private final GoogleTtsService googleTtsService;
 
-    
+    /**
+     * Synthesizes text to speech and returns audio bytes
+     * 
+     * @param request the TTS request
+     * @return synthesized audio bytes
+     */
     @PostMapping("/synthesize")
     @PreAuthorize("hasRole('USER')")
     public ResponseEntity<byte[]> synthesizeText(@Valid @RequestBody GoogleTtsRequest request) {
@@ -40,41 +44,15 @@ public class GoogleTtsController {
         try {
             byte[] response = googleTtsService.synthesizeAudioBytes(request);
             
-            // Determine the correct content type and file extension based on audio encoding
-            String contentType;
-            String fileExtension;
+            // Determine content type based on audio encoding
+            String contentType = getContentType(request.getAudioEncoding());
+            String fileExtension = getFileExtension(request.getAudioEncoding());
             
-            switch (request.getVoiceSettings().getAudioEncoding().toLowerCase()) {
-                case "mp3":
-                    contentType = "audio/mpeg";
-                    fileExtension = "mp3";
-                    break;
-                case "wav":
-                    contentType = "audio/wav";
-                    fileExtension = "wav";
-                    break;
-                case "ogg":
-                    contentType = "audio/ogg";
-                    fileExtension = "ogg";
-                    break;
-                case "flac":
-                    contentType = "audio/flac";
-                    fileExtension = "flac";
-                    break;
-                default:
-                    contentType = "audio/mpeg";
-                    fileExtension = "mp3";
-                    break;
-            }
-            
-            log.info("Successfully processed TTS synthesis request, returning {} audio", contentType);
-            
+            log.info("Successfully processed TTS synthesis request, audio size: {} bytes", response.length);
             return ResponseEntity.ok()
-                    .contentType(MediaType.parseMediaType(contentType))
-                    .header(HttpHeaders.CONTENT_DISPOSITION, "inline; filename=\"audio." + fileExtension + "\"")
-                    .header(HttpHeaders.CACHE_CONTROL, "no-cache")
-                    .header(HttpHeaders.ACCEPT_RANGES, "bytes")
-                    .body(response);
+                .contentType(MediaType.parseMediaType(contentType))
+                .header(HttpHeaders.CONTENT_DISPOSITION, "inline; filename=\"audio." + fileExtension + "\"")
+                .body(response);
             
         } catch (Exception e) {
             log.error("Failed to synthesize text: {}", e.getMessage(), e);
@@ -82,19 +60,44 @@ public class GoogleTtsController {
         }
     }
 
-    
+    /**
+     * Synthesizes text with custom voice settings and returns audio bytes
+     * 
+     * @param text the text to synthesize
+     * @param voiceSettings the voice configuration
+     * @return synthesized audio bytes
+     */
     @PostMapping("/synthesize-with-settings")
     @PreAuthorize("hasRole('USER')")
-    public ResponseEntity<GoogleTtsResponse> synthesizeWithSettings(
+    public ResponseEntity<byte[]> synthesizeWithSettings(
             @RequestParam String text,
             @Valid @RequestBody VoiceSettingsRequest voiceSettings) {
         
         log.info("Received TTS synthesis request with custom settings for {} characters", text.length());
         
         try {
-            GoogleTtsResponse response = googleTtsService.synthesizeTextWithSettings(text, voiceSettings);
-            log.info("Successfully processed TTS synthesis request with custom settings");
-            return ResponseEntity.ok(response);
+            byte[] response = googleTtsService.synthesizeAudioBytes(
+                GoogleTtsRequest.builder()
+                    .text(text)
+                    .languageCode(voiceSettings.getLanguageCode())
+                    .voiceName(voiceSettings.getVoiceName())
+                    .speakingRate(voiceSettings.getSpeakingRate())
+                    .pitch(voiceSettings.getPitch())
+                    .volumeGain(voiceSettings.getVolumeGain())
+                    .audioEncoding(voiceSettings.getAudioEncoding())
+                    .sampleRateHertz(voiceSettings.getSampleRateHertz())
+                    .build()
+            );
+            
+            // Determine content type based on audio encoding
+            String contentType = getContentType(voiceSettings.getAudioEncoding());
+            String fileExtension = getFileExtension(voiceSettings.getAudioEncoding());
+            
+            log.info("Successfully processed TTS synthesis request with custom settings, audio size: {} bytes", response.length);
+            return ResponseEntity.ok()
+                .contentType(MediaType.parseMediaType(contentType))
+                .header(HttpHeaders.CONTENT_DISPOSITION, "inline; filename=\"audio." + fileExtension + "\"")
+                .body(response);
             
         } catch (Exception e) {
             log.error("Failed to synthesize text with custom settings: {}", e.getMessage(), e);
@@ -148,50 +151,6 @@ public class GoogleTtsController {
     }
 
     /**
-     * Simple text-to-speech endpoint for quick testing
-     * 
-     * @param text the text to synthesize
-     * @param languageCode the language code (default: vi-VN)
-     * @param voiceName the voice name (default: vi-VN-Standard-A)
-     * @return audio file
-     */
-    @GetMapping("/speak")
-    @PreAuthorize("hasRole('USER')")
-    public ResponseEntity<byte[]> speakText(
-            @RequestParam String text,
-            @RequestParam(defaultValue = "vi-VN") String languageCode,
-            @RequestParam(defaultValue = "vi-VN-Standard-A") String voiceName) {
-        
-        log.info("Received simple TTS request for text: {} ({} chars)", text.substring(0, Math.min(50, text.length())), text.length());
-        
-        try {
-            // Create a simple request
-            GoogleTtsRequest request = GoogleTtsRequest.builder()
-                    .text(text)
-                    .voiceSettings(VoiceSettingsRequest.builder()
-                            .languageCode(languageCode)
-                            .voiceName(voiceName)
-                            .build())
-                    .build();
-            
-            byte[] response = googleTtsService.synthesizeAudioBytes(request);
-            
-            log.info("Successfully generated audio for simple TTS request");
-            
-            return ResponseEntity.ok()
-                    .contentType(MediaType.parseMediaType("audio/mpeg"))
-                    .header(HttpHeaders.CONTENT_DISPOSITION, "inline; filename=\"speech.mp3\"")
-                    .header(HttpHeaders.CACHE_CONTROL, "no-cache")
-                    .header(HttpHeaders.ACCEPT_RANGES, "bytes")
-                    .body(response);
-            
-        } catch (Exception e) {
-            log.error("Failed to synthesize simple text: {}", e.getMessage(), e);
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
-        }
-    }
-
-    /**
      * Health check endpoint for TTS service
      * 
      * @return service status
@@ -200,5 +159,64 @@ public class GoogleTtsController {
     public ResponseEntity<String> healthCheck() {
         log.debug("TTS service health check requested");
         return ResponseEntity.ok("Google Cloud TTS service is running");
+    }
+
+    /**
+     * Gets supported languages
+     * 
+     * @return list of supported language codes
+     */
+    @GetMapping("/languages")
+    @PreAuthorize("hasRole('USER')")
+    public ResponseEntity<List<String>> getSupportedLanguages() {
+        log.info("Getting supported languages");
+        
+        try {
+            // Common language codes supported by Google Cloud TTS
+            List<String> languages = List.of(
+                    "en-US", "en-GB", "en-AU", "en-CA", "en-IN",
+                    "es-ES", "es-MX", "es-AR", "es-CO", "es-PE",
+                    "fr-FR", "fr-CA", "fr-CH",
+                    "de-DE", "de-AT", "de-CH",
+                    "it-IT", "it-CH",
+                    "pt-BR", "pt-PT",
+                    "ja-JP", "ko-KR", "zh-CN", "zh-TW",
+                    "vi-VN", "th-TH", "hi-IN", "ar-SA"
+            );
+            
+            log.info("Returning {} supported languages", languages.size());
+            return ResponseEntity.ok(languages);
+            
+        } catch (Exception e) {
+            log.error("Failed to get supported languages: {}", e.getMessage(), e);
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
+        }
+    }
+    
+    /**
+     * Get content type based on audio encoding
+     */
+    private String getContentType(String audioEncoding) {
+        return switch (audioEncoding.toUpperCase()) {
+            case "MP3" -> "audio/mpeg";
+            case "WAV", "LINEAR16" -> "audio/wav";
+            case "OGG_OPUS" -> "audio/ogg";
+            case "MULAW" -> "audio/basic";
+            case "ALAW" -> "audio/basic";
+            default -> "audio/mpeg";
+        };
+    }
+    
+    /**
+     * Get file extension based on audio encoding
+     */
+    private String getFileExtension(String audioEncoding) {
+        return switch (audioEncoding.toUpperCase()) {
+            case "MP3" -> "mp3";
+            case "WAV", "LINEAR16" -> "wav";
+            case "OGG_OPUS" -> "ogg";
+            case "MULAW", "ALAW" -> "au";
+            default -> "mp3";
+        };
     }
 }

@@ -21,25 +21,5 @@ public class GoogleTtsRequest {
     @Size(max = 5000, message = "Text cannot exceed 5000 characters")
     private String text;
 
-    @NotBlank(message = "Language code cannot be blank")
-    @Size(min = 2, max = 10, message = "Language code must be between 2 and 10 characters")
-    private String languageCode;
-
-    @NotBlank(message = "Voice name cannot be blank")
-    private String voiceName;
-
-    @NotNull(message = "Speaking rate cannot be null")
-    private Double speakingRate;
-
-    @NotNull(message = "Pitch cannot be null")
-    private Double pitch;
-
-    @NotNull(message = "Volume gain cannot be null")
-    private Double volumeGain;
-
-    @Builder.Default
-    private String audioEncoding = "MP3";
-
-    @Builder.Default
-    private Integer sampleRateHertz = 24000;
+   private VoiceSettingsRequest voiceSettings;
 }

@@ -27,22 +27,22 @@ public class GoogleTtsServiceImpl implements GoogleTtsService {
         try {
             SynthesizeSpeechResponse response = performSynthesis(request);
             
-            String fileName = generateFileName(request.getAudioEncoding());
+            String fileName = generateFileName(request.getVoiceSettings().getAudioEncoding());
             
             log.info("Successfully synthesized text to speech. Audio size: {} bytes", 
                     response.getAudioContent().size());
 
             return GoogleTtsResponse.builder()
                     .audioContent(response.getAudioContent().toStringUtf8())
-                    .audioEncoding(request.getAudioEncoding())
-                    .sampleRateHertz(request.getSampleRateHertz())
-                    .languageCode(request.getLanguageCode())
-                    .voiceName(request.getVoiceName())
-                    .speakingRate(request.getSpeakingRate())
-                    .pitch(request.getPitch())
-                    .volumeGain(request.getVolumeGain())
+                    .audioEncoding(request.getVoiceSettings().getAudioEncoding())
+                    .sampleRateHertz(request.getVoiceSettings().getSampleRateHertz())
+                    .languageCode(request.getVoiceSettings().getLanguageCode())
+                    .voiceName(request.getVoiceSettings().getVoiceName())
+                    .speakingRate(request.getVoiceSettings().getSpeakingRate())
+                    .pitch(request.getVoiceSettings().getPitch())
+                    .volumeGain(request.getVoiceSettings().getVolumeGain())
                     .generatedAt(LocalDateTime.now())
-                    .durationMs(calculateDuration(request.getText(), request.getSpeakingRate()))
+                    .durationMs(calculateDuration(request.getText(), request.getVoiceSettings().getSpeakingRate()))
                     .fileName(fileName)
                     .fileUrl("/api/v1/tts/audio/" + fileName)
                     .build();
@@ -78,16 +78,16 @@ public class GoogleTtsServiceImpl implements GoogleTtsService {
                     .build();
 
             VoiceSelectionParams voice = VoiceSelectionParams.newBuilder()
-                    .setLanguageCode(request.getLanguageCode())
-                    .setName(request.getVoiceName())
+                    .setLanguageCode(request.getVoiceSettings().getLanguageCode())
+                    .setName(request.getVoiceSettings().getVoiceName())
                     .build();
 
             AudioConfig audioConfig = AudioConfig.newBuilder()
-                    .setAudioEncoding(AudioEncoding.valueOf(request.getAudioEncoding()))
-                    .setSpeakingRate(request.getSpeakingRate())
-                    .setPitch(request.getPitch())
-                    .setVolumeGainDb(request.getVolumeGain())
-                    .setSampleRateHertz(request.getSampleRateHertz())
+                    .setAudioEncoding(AudioEncoding.valueOf(request.getVoiceSettings().getAudioEncoding()))
+                    .setSpeakingRate(request.getVoiceSettings().getSpeakingRate())
+                    .setPitch(request.getVoiceSettings().getPitch())
+                    .setVolumeGainDb(request.getVoiceSettings().getVolumeGain())
+                    .setSampleRateHertz(request.getVoiceSettings().getSampleRateHertz())
                     .build();
 
             SynthesizeSpeechRequest synthesisRequest = SynthesizeSpeechRequest.newBuilder()
@@ -115,13 +115,7 @@ public class GoogleTtsServiceImpl implements GoogleTtsService {
         
         GoogleTtsRequest request = GoogleTtsRequest.builder()
                 .text(text)
-                .languageCode(voiceSettings.getLanguageCode())
-                .voiceName(voiceSettings.getVoiceName())
-                .speakingRate(voiceSettings.getSpeakingRate())
-                .pitch(voiceSettings.getPitch())
-                .volumeGain(voiceSettings.getVolumeGain())
-                .audioEncoding(voiceSettings.getAudioEncoding())
-                .sampleRateHertz(voiceSettings.getSampleRateHertz())
+                .voiceSettings(voiceSettings)
                 .build();
 
         return synthesizeText(request);

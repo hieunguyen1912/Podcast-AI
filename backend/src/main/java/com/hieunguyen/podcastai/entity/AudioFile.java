@@ -70,7 +70,7 @@ public class AudioFile extends AuditableEntity {
     private User user;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "tts_config_id", nullable = false)
+    @JoinColumn(name = "tts_config_id", nullable = true)
     private TtsConfig ttsConfig;
 
     @ManyToMany(mappedBy = "audioFiles", fetch = FetchType.LAZY)

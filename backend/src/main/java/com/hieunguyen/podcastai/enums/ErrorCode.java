@@ -56,6 +56,14 @@ public enum ErrorCode {
     CATEGORY_MOVE_FAILED(4010, "Failed to move category", HttpStatus.BAD_REQUEST),
     CATEGORY_SELF_REFERENCE(4011, "Cannot set category as its own parent", HttpStatus.BAD_REQUEST),
     CATEGORY_CIRCULAR_REFERENCE(4012, "Cannot create circular parent-child relationship", HttpStatus.BAD_REQUEST),
+    
+    // Audio Error Codes
+    AUDIO_GENERATION_FAILED(5001, "Audio generation failed", HttpStatus.INTERNAL_SERVER_ERROR),
+    TTS_SYNTHESIS_FAILED(5002, "Text-to-speech synthesis failed", HttpStatus.INTERNAL_SERVER_ERROR),
+    AUDIO_FILE_NOT_FOUND(5003, "Audio file not found", HttpStatus.NOT_FOUND),
+    AUDIO_FILE_ACCESS_DENIED(5004, "Access denied to audio file", HttpStatus.FORBIDDEN),
+    AUDIO_FILE_STORAGE_FAILED(5005, "Failed to store audio file", HttpStatus.INTERNAL_SERVER_ERROR),
+    AUDIO_FILE_PROCESSING_FAILED(5006, "Audio file processing failed", HttpStatus.INTERNAL_SERVER_ERROR),
     ;
 
     private final int code;

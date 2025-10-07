@@ -9,7 +9,6 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 
 import java.time.Instant;
-import java.time.LocalDate;
 
 @Data
 @Builder
@@ -24,12 +23,9 @@ public class UserDto {
     private String firstName;
     private String lastName;
     private String avatarUrl;
-    private LocalDate dateOfBirth;
-    private String phoneNumber;
     private UserRole role;
     private UserStatus status;
     private Boolean emailVerified;
-    private Boolean phoneVerified;
     private Instant createdAt;
     private Instant updatedAt;
 }

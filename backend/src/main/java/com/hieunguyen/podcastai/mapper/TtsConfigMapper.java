@@ -2,6 +2,7 @@ package com.hieunguyen.podcastai.mapper;
 
 import com.hieunguyen.podcastai.dto.request.TtsConfigRequest;
 import com.hieunguyen.podcastai.dto.request.TtsConfigUpdateRequest;
+import com.hieunguyen.podcastai.dto.request.VoiceSettingsRequest;
 import com.hieunguyen.podcastai.dto.response.TtsConfigDto;
 import com.hieunguyen.podcastai.entity.TtsConfig;
 import org.mapstruct.Mapper;
@@ -43,7 +44,29 @@ public interface TtsConfigMapper {
      */
     @Mapping(target = "user", ignore = true)
     @Mapping(target = "audioFiles", ignore = true)
+    @Mapping(target = "id", ignore = true)
+    @Mapping(target = "createdAt", ignore = true)
+    @Mapping(target = "updatedAt", ignore = true)
     void updateEntity(TtsConfigUpdateRequest request, @MappingTarget TtsConfig ttsConfig);
+
+    /**
+     * Convert TtsConfig entity to VoiceSettingsRequest
+     */
+    @Mapping(source = "volumeGainDb", target = "volumeGain")
+    VoiceSettingsRequest toVoiceSettingsRequest(TtsConfig ttsConfig);
+
+    /**
+     * Convert VoiceSettingsRequest to TtsConfig entity (for creating new config)
+     * Note: This returns a builder, needs user and other fields to be set
+     */
+    @Mapping(source = "volumeGain", target = "volumeGainDb")
+    @Mapping(target = "user", ignore = true)
+    @Mapping(target = "audioFiles", ignore = true)
+    @Mapping(target = "name", ignore = true)
+    @Mapping(target = "description", ignore = true)
+    @Mapping(target = "isDefault", ignore = true)
+    @Mapping(target = "isActive", ignore = true)
+    TtsConfig toEntityFromVoiceSettings(VoiceSettingsRequest voiceSettings);
 
     /**
      * Convert Instant to LocalDateTime

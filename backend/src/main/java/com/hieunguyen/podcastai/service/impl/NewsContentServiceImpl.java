@@ -83,20 +83,22 @@ public class NewsContentServiceImpl implements NewsContentService {
         }
     }
     
-    @Retryable(value = {Exception.class}, maxAttempts = 2, backoff = @Backoff(delay = 2000))
     private String getArticleContent(String articleUrl) {
         try {
             log.debug("Fetching full content for URL: {}", articleUrl);
         
-            // Connect to the URL with timeout
+            // Connect to the URL with configurable timeout and better error handling
             Document doc = Jsoup.connect(articleUrl)
-                .userAgent("Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36")
-                .timeout(10000) // 10 seconds timeout
+                .userAgent("Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36")
+                .timeout(newsApiConfig.getContentExtractionTimeout()) // Use configurable timeout
                 .followRedirects(true)
+                .maxBodySize(0) // No limit on body size
+                .ignoreHttpErrors(true) // Don't fail on HTTP errors
+                .ignoreContentType(true) // Accept any content type
                 .get();
             
             // Remove unwanted elements
-            doc.select("script, style, nav, header, footer, aside, .advertisement, .ads").remove();
+            doc.select("script, style, nav, header, footer, aside, .advertisement, .ads, .social-share, .comments").remove();
             
             // Try different selectors for article content
             String content = extractContent(doc);
@@ -112,28 +114,30 @@ public class NewsContentServiceImpl implements NewsContentService {
             
             return content;
             
+        } catch (java.net.SocketTimeoutException e) {
+            log.warn("Timeout occurred while fetching content from URL: {} - {}", articleUrl, e.getMessage());
+            throw new RuntimeException("Content extraction timeout", e);
+        } catch (java.net.ConnectException e) {
+            log.warn("Connection failed for URL: {} - {}", articleUrl, e.getMessage());
+            throw new RuntimeException("Content extraction connection failed", e);
         } catch (Exception e) {
-            log.error("Failed to get article content for URL: {}", articleUrl, e);
-            return "Content extraction failed";
+            log.error("Failed to get article content for URL: {} - {}", articleUrl, e.getMessage(), e);
+            throw new RuntimeException("Content extraction failed", e);
         }
     }
     
     @Override
+    @Retryable(value = {Exception.class}, maxAttempts = 3, backoff = @Backoff(delay = 2000, multiplier = 1.5))
     public NewsArticle getArticleWithFullContent(NewsArticle article) {
         if (article == null || article.getUrl() == null) {
             return article;
         }
         
-        try {
-            log.debug("Fetching full content for article: {}", article.getTitle());
-            String fullContent = getArticleContent(article.getUrl());
-            article.setFullContent(fullContent);
-            log.info("Successfully added full content to article: {}", article.getTitle());
-            return article;
-        } catch (Exception e) {
-            log.error("Failed to get full content for article: {}", article.getTitle(), e);
-            return article;
-        }
+        log.debug("Fetching full content for article: {}", article.getTitle());
+        String fullContent = getArticleContent(article.getUrl());
+        article.setFullContent(fullContent);
+        log.info("Successfully added full content to article: {}", article.getTitle());
+        return article;
     }
 
     private String extractContent(Document doc) {
@@ -185,6 +189,52 @@ public class NewsContentServiceImpl implements NewsContentService {
         }
         
         return content;
+    }
+    
+    private String getArticleContentFallback(String articleUrl) {
+        try {
+            log.debug("Trying fallback content extraction for URL: {}", articleUrl);
+            
+            // Use shorter timeout for fallback
+            Document doc = Jsoup.connect(articleUrl)
+                .userAgent("Mozilla/5.0 (compatible; ContentExtractor/1.0)")
+                .timeout(15000) // Shorter timeout for fallback
+                .followRedirects(true)
+                .maxBodySize(1024 * 1024) // Limit body size to 1MB
+                .ignoreHttpErrors(true)
+                .ignoreContentType(true)
+                .get();
+            
+            // Try to extract just the title and first few paragraphs
+            String title = doc.title();
+            Elements paragraphs = doc.select("p");
+            
+            StringBuilder content = new StringBuilder();
+            if (title != null && !title.trim().isEmpty()) {
+                content.append(title).append("\n\n");
+            }
+            
+            // Get first 3 paragraphs
+            for (int i = 0; i < Math.min(3, paragraphs.size()); i++) {
+                String text = paragraphs.get(i).text();
+                if (text.length() > 50) {
+                    content.append(text).append("\n\n");
+                }
+            }
+            
+            String result = content.toString().trim();
+            if (result.length() > 200) {
+                log.info("Fallback extraction successful: {} characters", result.length());
+                return result;
+            } else {
+                log.warn("Fallback extraction produced minimal content");
+                return "Content extraction failed - insufficient content";
+            }
+            
+        } catch (Exception e) {
+            log.error("Fallback content extraction also failed for URL: {}", articleUrl, e);
+            return "Content extraction failed - all methods exhausted";
+        }
     }
     
     @Override
@@ -382,6 +432,22 @@ public class NewsContentServiceImpl implements NewsContentService {
     public List<NewsArticle> recoverTopHeadlines(Exception ex, String country, String category, int pageSize) {
         log.warn("Using fallback for top headlines");
         return getFallbackHeadlines();
+    }
+    
+    @Recover
+    public NewsArticle recoverGetArticleWithFullContent(Exception ex, NewsArticle article) {
+        log.warn("Using fallback for article content extraction: {} - Error: {}", article.getTitle(), ex.getMessage());
+        try {
+            // Try fallback method with shorter timeout
+            String fallbackContent = getArticleContentFallback(article.getUrl());
+            article.setFullContent(fallbackContent);
+            log.info("Fallback successful for article: {}", article.getTitle());
+            return article;
+        } catch (Exception fallbackEx) {
+            log.error("Fallback also failed for article: {} - {}", article.getTitle(), fallbackEx.getMessage());
+            article.setFullContent("Content extraction failed - please try again later");
+            return article;
+        }
     }
     
     private List<NewsArticle> getFallbackNews(String query) {
