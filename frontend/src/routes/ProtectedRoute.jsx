@@ -5,14 +5,9 @@
 
 import React from 'react';
 import { Navigate } from 'react-router-dom';
-import { useAuth } from '../../contexts/AuthContext';
+import { useAuth } from '../contexts/AuthContext';
 
-/**
- * Protected Route component
- * @param {Object} props - Component props
- * @param {React.ReactNode} props.children - Child components to render
- * @param {string} props.redirectTo - Path to redirect to if not authenticated
- */
+
 function ProtectedRoute({ children, redirectTo = '/login' }) {
   const { isAuthenticated, isLoading } = useAuth();
 

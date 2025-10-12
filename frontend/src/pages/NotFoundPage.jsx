@@ -4,7 +4,7 @@
  */
 
 import React from 'react';
-import './NotFoundPage.css';
+import '../styles/pages/NotFoundPage.css';
 
 function NotFoundPage() {
   return (

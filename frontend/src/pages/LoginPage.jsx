@@ -7,7 +7,7 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import { isValidEmail } from '../utils/validation';
-import './LoginPage.css';
+import '../styles/pages/LoginPage.css';
 
 function LoginPage() {
   const { login, error, isLoading, isAuthenticated } = useAuth();

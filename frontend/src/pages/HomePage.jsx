@@ -5,7 +5,7 @@
 
 import React from 'react';
 import { useAuth } from '../contexts/AuthContext';
-import './HomePage.css';
+import '../styles/pages/HomePage.css';
 
 function HomePage() {
   const { isAuthenticated, user } = useAuth();

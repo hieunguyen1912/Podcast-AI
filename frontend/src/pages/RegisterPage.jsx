@@ -6,7 +6,7 @@
 import React, { useState } from 'react';
 import { useAuth } from '../contexts/AuthContext';
 import { isValidEmail, validatePassword } from '../utils/validation';
-import './RegisterPage.css';
+import '../styles/pages/RegisterPage.css';
 
 function RegisterPage() {
   const { register, error, isLoading } = useAuth();

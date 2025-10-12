@@ -6,7 +6,7 @@
 import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext';
-import './Header.css';
+import '../../styles/components/Header.css';
 
 function Header() {
   const { user, isAuthenticated, logout } = useAuth();
@@ -85,14 +85,14 @@ function Header() {
 
               {isMenuOpen && (
                 <div className="user-menu-dropdown" role="menu">
+                  <Link to="/dashboard" role="menuitem" onClick={() => setIsMenuOpen(false)}>
+                    Dashboard
+                  </Link>
                   <Link to="/me" role="menuitem" onClick={() => setIsMenuOpen(false)}>
                     Profile
                   </Link>
                   <Link to="/favorites" role="menuitem" onClick={() => setIsMenuOpen(false)}>
                     Favorites
-                  </Link>
-                  <Link to="/settings" role="menuitem" onClick={() => setIsMenuOpen(false)}>
-                    Settings
                   </Link>
                   <hr />
                   <button
