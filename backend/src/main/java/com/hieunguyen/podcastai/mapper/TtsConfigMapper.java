@@ -64,8 +64,6 @@ public interface TtsConfigMapper {
     @Mapping(target = "audioFiles", ignore = true)
     @Mapping(target = "name", ignore = true)
     @Mapping(target = "description", ignore = true)
-    @Mapping(target = "isDefault", ignore = true)
-    @Mapping(target = "isActive", ignore = true)
     TtsConfig toEntityFromVoiceSettings(VoiceSettingsRequest voiceSettings);
 
     /**

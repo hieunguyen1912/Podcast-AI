@@ -99,41 +99,66 @@ export function AuthProvider({ children }) {
   useEffect(() => {
     const initializeAuth = async () => {
       try {
+        console.log('🔄 Initializing auth...');
+        
         const existingToken = authService.getToken();
         const user = authService.getUser();
         
         if (existingToken && user) {
+          console.log('✅ Found existing token and user, verifying...');
+          
           // Verify existing token by fetching profile
           const profileResult = await authService.getProfile();
           if (profileResult.success) {
+            console.log('✅ Existing token is valid, user authenticated');
             dispatch({
               type: AUTH_ACTIONS.LOGIN_SUCCESS,
               payload: { user: profileResult.data }
             });
             return;
-          }
-        }
-
-        const refreshResult = await authService.refreshToken();
-        
-        if (refreshResult.success) {
-          
-          const profileResult = await authService.getProfile();
-          console.log('👤 Profile result:', profileResult);
-          
-          if (profileResult.success) {
-            dispatch({
-              type: AUTH_ACTIONS.LOGIN_SUCCESS,
-              payload: { user: profileResult.data }
-            });
           } else {
-            authService.clearAuth();
-            dispatch({ type: AUTH_ACTIONS.LOGOUT });
+            console.log('❌ Existing token invalid, will try refresh...');
           }
         } else {
+          console.log('❌ No existing token or user data found');
+        }
+
+        // Try refresh token only if:
+        // 1. We had a token but it was invalid (existingToken exists but profile failed)
+        // 2. We had user data but no token (user exists but no token - possible after reload)
+        if (existingToken || user) {
+          console.log('🔄 Attempting to refresh token using HTTP-Only cookie...');
+          const refreshResult = await authService.refreshToken();
+          
+          if (refreshResult.success) {
+            console.log('✅ Token refresh successful, fetching profile...');
+            
+            const profileResult = await authService.getProfile();
+            console.log('👤 Profile result:', profileResult);
+            
+            if (profileResult.success) {
+              console.log('✅ Profile fetched successfully, user authenticated');
+              dispatch({
+                type: AUTH_ACTIONS.LOGIN_SUCCESS,
+                payload: { user: profileResult.data }
+              });
+            } else {
+              console.log('❌ Profile fetch failed, clearing auth');
+              authService.clearAuth();
+              dispatch({ type: AUTH_ACTIONS.LOGOUT });
+            }
+          } else {
+            console.log('❌ Token refresh failed, no valid session');
+            authService.clearAuth();
+            dispatch({ type: AUTH_ACTIONS.SET_LOADING, payload: false });
+          }
+        } else {
+          console.log('❌ No existing session found, user not authenticated');
           dispatch({ type: AUTH_ACTIONS.SET_LOADING, payload: false });
         }
       } catch (error) {
+        console.error('❌ Auth initialization error:', error);
+        authService.clearAuth();
         dispatch({ type: AUTH_ACTIONS.SET_LOADING, payload: false });
       }
     };

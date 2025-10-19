@@ -39,9 +39,12 @@ export const profileService = {
   /**
    * Update user profile
    * @param {Object} profileData - Updated profile data
-   * @param {string} profileData.firstName - User's first name
-   * @param {string} profileData.lastName - User's last name
-   * @param {string} profileData.email - User's email
+   * @param {string} profileData.username - User's username (required)
+   * @param {string} profileData.email - User's email (required)
+   * @param {string} profileData.firstName - User's first name (optional)
+   * @param {string} profileData.lastName - User's last name (optional)
+   * @param {string} profileData.phoneNumber - User's phone number (optional)
+   * @param {string} profileData.dateOfBirth - User's date of birth (optional)
    * @returns {Promise<Object>} API response
    */
   async updateProfile(profileData) {

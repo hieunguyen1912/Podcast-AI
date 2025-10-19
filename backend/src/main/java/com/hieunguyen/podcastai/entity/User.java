@@ -64,9 +64,6 @@ public class User extends AuditableEntity {
     private Boolean emailVerified = false;
     
     @OneToMany(mappedBy = "user", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
-    private List<Playlist> playlists = new ArrayList<>();
-    
-    @OneToMany(mappedBy = "user", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
     private List<UserFavorite> favorites = new ArrayList<>();
     
 }

@@ -42,27 +42,6 @@ public class TtsConfigController {
         return ResponseEntity.status(HttpStatus.CREATED).body(response);
     }
 
-    /**
-     * Get all TTS configurations for the current user
-     */
-    @GetMapping
-    public ResponseEntity<ApiResponse<List<TtsConfigDto>>> getAllTtsConfigs() {
-        log.info("Retrieving all TTS configurations for current user");
-        
-        List<TtsConfigDto> ttsConfigs = ttsConfigService.getAllTtsConfigs();
-        
-        ApiResponse<List<TtsConfigDto>> response = ApiResponse.<List<TtsConfigDto>>builder()
-                .code(2000)
-                .message("TTS configurations retrieved successfully")
-                .data(ttsConfigs)
-                .build();
-        
-        return ResponseEntity.ok(response);
-    }
-
-    /**
-     * Get TTS configuration by ID
-     */
     @GetMapping("/{id}")
     public ResponseEntity<ApiResponse<TtsConfigDto>> getTtsConfigById(@PathVariable Long id) {
         log.info("Retrieving TTS configuration with ID: {}", id);
@@ -78,23 +57,7 @@ public class TtsConfigController {
         return ResponseEntity.ok(response);
     }
 
-    /**
-     * Get the default TTS configuration
-     */
-    @GetMapping("/default")
-    public ResponseEntity<ApiResponse<TtsConfigDto>> getDefaultTtsConfig() {
-        log.info("Retrieving default TTS configuration for current user");
-        
-        TtsConfigDto ttsConfig = ttsConfigService.getDefaultTtsConfig();
-        
-        ApiResponse<TtsConfigDto> response = ApiResponse.<TtsConfigDto>builder()
-                .code(2000)
-                .message("Default TTS configuration retrieved successfully")
-                .data(ttsConfig)
-                .build();
-        
-        return ResponseEntity.ok(response);
-    }
+   
 
     /**
      * Update TTS configuration by ID
@@ -133,77 +96,5 @@ public class TtsConfigController {
         return ResponseEntity.ok(response);
     }
 
-    /**
-     * Set TTS configuration as default
-     */
-    @PutMapping("/{id}/set-default")
-    public ResponseEntity<ApiResponse<TtsConfigDto>> setAsDefault(@PathVariable Long id) {
-        log.info("Setting TTS configuration with ID: {} as default", id);
-        
-        TtsConfigDto ttsConfig = ttsConfigService.setAsDefault(id);
-        
-        ApiResponse<TtsConfigDto> response = ApiResponse.<TtsConfigDto>builder()
-                .code(2000)
-                .message("TTS configuration set as default successfully")
-                .data(ttsConfig)
-                .build();
-        
-        return ResponseEntity.ok(response);
-    }
-
-    /**
-     * Get TTS configuration count
-     */
-    @GetMapping("/count")
-    public ResponseEntity<ApiResponse<Long>> getTtsConfigCount() {
-        log.info("Retrieving TTS configuration count for current user");
-        
-        long count = ttsConfigService.getTtsConfigCount();
-        
-        ApiResponse<Long> response = ApiResponse.<Long>builder()
-                .code(2000)
-                .message("TTS configuration count retrieved successfully")
-                .data(count)
-                .build();
-        
-        return ResponseEntity.ok(response);
-    }
-
-    /**
-     * Duplicate TTS configuration
-     */
-    @PostMapping("/{id}/duplicate")
-    public ResponseEntity<ApiResponse<TtsConfigDto>> duplicateTtsConfig(
-            @PathVariable Long id, 
-            @RequestParam String newName) {
-        log.info("Duplicating TTS configuration with ID: {} with new name: {}", id, newName);
-        
-        TtsConfigDto ttsConfig = ttsConfigService.duplicateTtsConfig(id, newName);
-        
-        ApiResponse<TtsConfigDto> response = ApiResponse.<TtsConfigDto>builder()
-                .code(2000)
-                .message("TTS configuration duplicated successfully")
-                .data(ttsConfig)
-                .build();
-        
-        return ResponseEntity.status(HttpStatus.CREATED).body(response);
-    }
-
-    /**
-     * Toggle active status of TTS configuration
-     */
-    @PutMapping("/{id}/toggle-active")
-    public ResponseEntity<ApiResponse<TtsConfigDto>> toggleActiveStatus(@PathVariable Long id) {
-        log.info("Toggling active status for TTS configuration with ID: {}", id);
-        
-        TtsConfigDto ttsConfig = ttsConfigService.toggleActiveStatus(id);
-        
-        ApiResponse<TtsConfigDto> response = ApiResponse.<TtsConfigDto>builder()
-                .code(2000)
-                .message("TTS configuration active status toggled successfully")
-                .data(ttsConfig)
-                .build();
-        
-        return ResponseEntity.ok(response);
-    }
+   
 }

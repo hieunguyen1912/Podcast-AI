@@ -1,6 +1,6 @@
 /**
- * Header component
- * Main navigation header with logo, search, and user menu
+ * Header component - Modern Minimalist + Soft Neumorphism Design
+ * Clean navigation with floating elements and subtle shadows
  */
 
 import React, { useState } from 'react';
@@ -12,10 +12,6 @@ function Header() {
   const { user, isAuthenticated, logout } = useAuth();
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
-
-  // Debug logging
-  console.log('Header - isAuthenticated:', isAuthenticated);
-  console.log('Header - user:', user);
 
   const handleSearch = (e) => {
     e.preventDefault();
@@ -35,33 +31,36 @@ function Header() {
       <div className="header-container">
         {/* Logo */}
         <div className="header-logo">
-          <Link to="/" aria-label="PodcastAI Home">
-            <h1>PodcastAI</h1>
+          <Link to="/" aria-label="PodcastAI Home" className="logo-link">
+            <span className="logo-text">
+              <span className="logo-podcast">Podcast</span>
+              <span className="logo-ai">AI</span>
+            </span>
           </Link>
         </div>
 
-        {/* Search Bar */}
-        <div className="header-search">
-          <form onSubmit={handleSearch} role="search">
-            <div className="search-input-group">
-              <input
-                type="search"
-                placeholder="Search podcasts, episodes..."
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                aria-label="Search podcasts and episodes"
-                className="search-input"
-              />
-              <button
-                type="submit"
-                aria-label="Search"
-                className="search-button"
-              >
-                🔍
-              </button>
-            </div>
-          </form>
-        </div>
+        {/* Navigation Links */}
+        <nav className="header-nav">
+          <Link to="/discover" className="nav-link">
+            Discover
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+              <polyline points="6,9 12,15 18,9"/>
+            </svg>
+          </Link>
+          <Link to="/create" className="nav-link">
+            Create
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+              <polyline points="6,9 12,15 18,9"/>
+            </svg>
+          </Link>
+          <Link to="/features" className="nav-link">
+            Features
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+              <polyline points="6,9 12,15 18,9"/>
+            </svg>
+          </Link>
+          <Link to="/pricing" className="nav-link">Pricing</Link>
+        </nav>
 
         {/* User Menu */}
         <div className="header-user">
@@ -80,25 +79,35 @@ function Header() {
                 <span className="user-name">
                   {user?.firstName || user?.username || 'User'}
                 </span>
-                <span className="menu-arrow">▼</span>
+                <svg 
+                  width="12" 
+                  height="12" 
+                  viewBox="0 0 24 24" 
+                  fill="none" 
+                  stroke="currentColor" 
+                  strokeWidth="2"
+                  className={`menu-arrow ${isMenuOpen ? 'open' : ''}`}
+                >
+                  <polyline points="6,9 12,15 18,9"/>
+                </svg>
               </button>
 
               {isMenuOpen && (
                 <div className="user-menu-dropdown" role="menu">
-                  <Link to="/dashboard" role="menuitem" onClick={() => setIsMenuOpen(false)}>
+                  <Link to="/dashboard" role="menuitem" onClick={() => setIsMenuOpen(false)} className="menu-item">
                     Dashboard
                   </Link>
-                  <Link to="/me" role="menuitem" onClick={() => setIsMenuOpen(false)}>
+                  <Link to="/me" role="menuitem" onClick={() => setIsMenuOpen(false)} className="menu-item">
                     Profile
                   </Link>
-                  <Link to="/favorites" role="menuitem" onClick={() => setIsMenuOpen(false)}>
+                  <Link to="/favorites" role="menuitem" onClick={() => setIsMenuOpen(false)} className="menu-item">
                     Favorites
                   </Link>
-                  <hr />
+                  <div className="menu-divider"></div>
                   <button
                     onClick={handleLogout}
                     role="menuitem"
-                    className="logout-button"
+                    className="menu-item logout-button"
                   >
                     Logout
                   </button>
@@ -107,8 +116,8 @@ function Header() {
             </div>
           ) : (
             <div className="auth-buttons">
-              <Link to="/login" className="btn btn-outline">Login</Link>
-              <Link to="/register" className="btn btn-primary">Sign Up</Link>
+              <Link to="/login" className="btn btn-outline">Log in</Link>
+              <Link to="/register" className="btn btn-primary">Sign up</Link>
             </div>
           )}
         </div>

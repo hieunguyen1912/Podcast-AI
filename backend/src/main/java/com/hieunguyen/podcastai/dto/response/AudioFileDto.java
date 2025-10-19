@@ -7,7 +7,6 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 
 import java.time.Instant;
-import java.util.List;
 
 @Data
 @Builder
@@ -23,12 +22,7 @@ public class AudioFileDto {
     private String fileName;
     private String filePath;
     private Long fileSizeBytes;
-    private Long durationSeconds;
-    private Long playCount;
-    private Long downloadCount;
-    private Long likeCount;
     private ProcessingStatus status;
-    private Boolean isPublic;
     private Instant publishedAt;
     private Instant createdAt;
     private Instant updatedAt;
@@ -40,6 +34,4 @@ public class AudioFileDto {
     // Relationships
     private UserDto user;
     private TtsConfigDto ttsConfig;
-    private CategoryDto category;
-    private List<TagDto> tags;
 }

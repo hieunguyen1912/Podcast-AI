@@ -15,9 +15,12 @@ function ProfileModule() {
   const [error, setError] = useState(null);
   const [isEditing, setIsEditing] = useState(false);
   const [editForm, setEditForm] = useState({
+    username: '',
+    email: '',
     firstName: '',
     lastName: '',
-    email: ''
+    phoneNumber: '',
+    dateOfBirth: ''
   });
 
   // Load profile data on component mount
@@ -38,9 +41,12 @@ function ProfileModule() {
         if (result.success) {
           setProfile(result.data);
           setEditForm({
+            username: result.data.username || '',
+            email: result.data.email || '',
             firstName: result.data.firstName || '',
             lastName: result.data.lastName || '',
-            email: result.data.email || ''
+            phoneNumber: result.data.phoneNumber || '',
+            dateOfBirth: result.data.dateOfBirth || ''
           });
         } else {
           setError(result.error || 'Failed to load profile');
@@ -91,9 +97,12 @@ function ProfileModule() {
 
   const handleCancel = () => {
     setEditForm({
+      username: profile?.username || '',
+      email: profile?.email || '',
       firstName: profile?.firstName || '',
       lastName: profile?.lastName || '',
-      email: profile?.email || ''
+      phoneNumber: profile?.phoneNumber || '',
+      dateOfBirth: profile?.dateOfBirth || ''
     });
     setIsEditing(false);
     setError(null);
@@ -199,43 +208,97 @@ function ProfileModule() {
           <div className="profile-section">
             <h3>Basic Information</h3>
             
-            {isEditing ? (
-              <div className="edit-form">
-                <div className="form-group">
-                  <label htmlFor="firstName">First Name</label>
-                  <input
-                    type="text"
-                    id="firstName"
-                    name="firstName"
-                    value={editForm.firstName}
-                    onChange={handleInputChange}
-                    className="form-input"
-                  />
-                </div>
-                
-                <div className="form-group">
-                  <label htmlFor="lastName">Last Name</label>
-                  <input
-                    type="text"
-                    id="lastName"
-                    name="lastName"
-                    value={editForm.lastName}
-                    onChange={handleInputChange}
-                    className="form-input"
-                  />
-                </div>
-                
-                <div className="form-group">
-                  <label htmlFor="email">Email</label>
-                  <input
-                    type="email"
-                    id="email"
-                    name="email"
-                    value={editForm.email}
-                    onChange={handleInputChange}
-                    className="form-input"
-                  />
-                </div>
+              {isEditing ? (
+                <div className="edit-form">
+                  <div className="form-group">
+                    <label htmlFor="username">Username *</label>
+                    <input
+                      type="text"
+                      id="username"
+                      name="username"
+                      value={editForm.username}
+                      onChange={handleInputChange}
+                      className="form-input"
+                      required
+                      minLength="3"
+                      maxLength="50"
+                      pattern="^[a-zA-Z0-9_]+$"
+                      title="Username can only contain letters, numbers, and underscores"
+                    />
+                    <small className="form-help">3-50 characters, letters, numbers, and underscores only</small>
+                  </div>
+                  
+                  <div className="form-group">
+                    <label htmlFor="email">Email *</label>
+                    <input
+                      type="email"
+                      id="email"
+                      name="email"
+                      value={editForm.email}
+                      onChange={handleInputChange}
+                      className="form-input"
+                      required
+                      maxLength="100"
+                    />
+                    <small className="form-help">Valid email address required</small>
+                  </div>
+                  
+                  <div className="form-group">
+                    <label htmlFor="firstName">First Name</label>
+                    <input
+                      type="text"
+                      id="firstName"
+                      name="firstName"
+                      value={editForm.firstName}
+                      onChange={handleInputChange}
+                      className="form-input"
+                      maxLength="50"
+                    />
+                    <small className="form-help">Maximum 50 characters</small>
+                  </div>
+                  
+                  <div className="form-group">
+                    <label htmlFor="lastName">Last Name</label>
+                    <input
+                      type="text"
+                      id="lastName"
+                      name="lastName"
+                      value={editForm.lastName}
+                      onChange={handleInputChange}
+                      className="form-input"
+                      maxLength="50"
+                    />
+                    <small className="form-help">Maximum 50 characters</small>
+                  </div>
+                  
+                  <div className="form-group">
+                    <label htmlFor="phoneNumber">Phone Number</label>
+                    <input
+                      type="tel"
+                      id="phoneNumber"
+                      name="phoneNumber"
+                      value={editForm.phoneNumber}
+                      onChange={handleInputChange}
+                      className="form-input"
+                      maxLength="20"
+                      pattern="^[+]?[0-9\\s\\-()]*$"
+                      title="Phone number format is invalid"
+                    />
+                    <small className="form-help">Optional, maximum 20 characters</small>
+                  </div>
+                  
+                  <div className="form-group">
+                    <label htmlFor="dateOfBirth">Date of Birth</label>
+                    <input
+                      type="date"
+                      id="dateOfBirth"
+                      name="dateOfBirth"
+                      value={editForm.dateOfBirth}
+                      onChange={handleInputChange}
+                      className="form-input"
+                    />
+                    <small className="form-help">Optional birth date</small>
+                  </div>
                 
                 <div className="form-actions">
                   <button 
@@ -254,26 +317,38 @@ function ProfileModule() {
                 </div>
               </div>
             ) : (
-              <div className="profile-details">
-                <div className="detail-row">
-                  <span className="detail-label">Username:</span>
-                  <span className="detail-value">{profile?.username || 'N/A'}</span>
-                </div>
-                
-                <div className="detail-row">
-                  <span className="detail-label">First Name:</span>
-                  <span className="detail-value">{profile?.firstName || 'N/A'}</span>
-                </div>
-                
-                <div className="detail-row">
-                  <span className="detail-label">Last Name:</span>
-                  <span className="detail-value">{profile?.lastName || 'N/A'}</span>
-                </div>
-                
-                <div className="detail-row">
-                  <span className="detail-label">Email:</span>
-                  <span className="detail-value">{profile?.email || 'N/A'}</span>
-                </div>
+                <div className="profile-details">
+                  <div className="detail-row">
+                    <span className="detail-label">Username:</span>
+                    <span className="detail-value">{profile?.username || 'N/A'}</span>
+                  </div>
+                  
+                  <div className="detail-row">
+                    <span className="detail-label">Email:</span>
+                    <span className="detail-value">{profile?.email || 'N/A'}</span>
+                  </div>
+                  
+                  <div className="detail-row">
+                    <span className="detail-label">First Name:</span>
+                    <span className="detail-value">{profile?.firstName || 'N/A'}</span>
+                  </div>
+                  
+                  <div className="detail-row">
+                    <span className="detail-label">Last Name:</span>
+                    <span className="detail-value">{profile?.lastName || 'N/A'}</span>
+                  </div>
+                  
+                  <div className="detail-row">
+                    <span className="detail-label">Phone Number:</span>
+                    <span className="detail-value">{profile?.phoneNumber || 'N/A'}</span>
+                  </div>
+                  
+                  <div className="detail-row">
+                    <span className="detail-label">Date of Birth:</span>
+                    <span className="detail-value">
+                      {profile?.dateOfBirth ? formatDate(profile.dateOfBirth) : 'N/A'}
+                    </span>
+                  </div>
                 
                 <div className="detail-row">
                   <span className="detail-label">Email Verified:</span>

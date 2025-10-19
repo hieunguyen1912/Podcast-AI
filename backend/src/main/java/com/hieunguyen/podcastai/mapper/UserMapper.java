@@ -16,7 +16,6 @@ public interface UserMapper {
    @Mapping(target = "role", ignore = true)
    @Mapping(target = "status", ignore = true)
    @Mapping(target = "emailVerified", ignore = true)
-   @Mapping(target = "playlists", ignore = true)
    @Mapping(target = "favorites", ignore = true)
    User toEntity(UserRegisterRequest request);
     
@@ -25,7 +24,6 @@ public interface UserMapper {
     @Mapping(target = "role", ignore = true)
     @Mapping(target = "status", ignore = true)
     @Mapping(target = "emailVerified", ignore = true)
-    @Mapping(target = "playlists", ignore = true)
     @Mapping(target = "favorites", ignore = true)
     User toEntity(UserUpdateRequest request);
     

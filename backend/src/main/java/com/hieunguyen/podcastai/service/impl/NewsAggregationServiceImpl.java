@@ -1,0 +1,208 @@
+package com.hieunguyen.podcastai.service.impl;
+
+import com.hieunguyen.podcastai.entity.NewsArticle;
+import com.hieunguyen.podcastai.entity.NewsSource;
+import com.hieunguyen.podcastai.enums.NewsSourceType;
+import com.hieunguyen.podcastai.repository.NewsArticleRepository;
+import com.hieunguyen.podcastai.repository.NewsSourceRepository;
+import com.hieunguyen.podcastai.service.NewsAggregationService;
+import com.hieunguyen.podcastai.service.NewsSourceFactory;
+import com.hieunguyen.podcastai.service.NewsSourceIntegrationService;
+
+import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+
+import java.time.Instant;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Optional;
+
+@Service
+@Slf4j
+@RequiredArgsConstructor
+public class NewsAggregationServiceImpl implements NewsAggregationService {
+
+    private final NewsSourceFactory newsSourceFactory;
+    private final NewsSourceRepository newsSourceRepository;
+    private final NewsArticleRepository newsArticleRepository;
+
+
+    @Override
+    @Transactional
+    public int fetchAllNews() {
+        log.info("Starting to fetch news from all active sources");
+        
+        List<NewsSource> activeSources = newsSourceRepository.findByIsActiveTrueOrderByPriorityDesc();
+        int totalArticles = 0;
+        
+        for (NewsSource source : activeSources) {
+            try {
+                int articlesCount = fetchNewsFromSource(source.getId());
+                totalArticles += articlesCount;
+                log.info("Fetched {} articles from source: {}", articlesCount, source.getName());
+            } catch (Exception e) {
+                log.error("Failed to fetch from source {}: {}", source.getName(), e.getMessage(), e);
+                updateSourceStatus(source, false, 0);
+            }
+        }
+        
+        log.info("Completed fetching news. Total articles: {}", totalArticles);
+        return totalArticles;
+    }
+
+    @Override
+    @Transactional
+    public int fetchNewsFromSource(Long sourceId) {
+        NewsSource source = newsSourceRepository.findById(sourceId)
+            .orElseThrow(() -> new RuntimeException("Source not found: " + sourceId));
+        
+        if (!source.getIsActive()) {
+            log.warn("Source {} is inactive", source.getName());
+            return 0;
+        }
+        
+        log.info("Fetching news from source: {} (type: {})", source.getName(), source.getType());
+        
+        NewsSourceIntegrationService integrationService = newsSourceFactory.createService(source);
+        
+        List<NewsArticle> articles = new ArrayList<>();
+        if (integrationService != null) {
+            try {
+                articles = integrationService.fetchNews(source);
+            } catch (Exception e) {
+                log.error("Failed to fetch from integration service: {}", e.getMessage(), e);
+            }
+        } else {
+            log.warn("No integration service available for source: {}", source.getName());
+        }
+        
+        int savedCount = processAndSaveArticles(articles, source);
+        updateSourceStatus(source, true, savedCount);
+        
+        return savedCount;
+    }
+
+    @Override
+    @Transactional
+    public int fetchNewsFromSourceType(NewsSourceType sourceType) {
+        log.info("Fetching news from all sources of type: {}", sourceType);
+        
+        List<NewsSource> sources = newsSourceRepository
+            .findByTypeAndIsActiveTrueOrderByPriorityDesc(sourceType);
+        
+        int totalArticles = 0;
+        
+        for (NewsSource source : sources) {
+            try {
+                int articlesCount = fetchNewsFromSource(source.getId());
+                totalArticles += articlesCount;
+            } catch (Exception e) {
+                log.error("Failed to fetch from source {}: {}", source.getName(), e.getMessage(), e);
+                updateSourceStatus(source, false, 0);
+            }
+        }
+        
+        log.info("Completed fetching from {} sources. Total articles: {}", sources.size(), totalArticles);
+        return totalArticles;
+    }
+
+    @Override
+    @Transactional
+    public int processAndSaveArticles(List<NewsArticle> articles, NewsSource source) {
+        if (articles == null || articles.isEmpty()) {
+            return 0;
+        }
+        
+        log.info("Processing {} articles from source: {}", articles.size(), source.getName());
+        
+        int savedCount = 0;
+        
+        for (NewsArticle article : articles) {
+            try {
+                // Set source information
+                article.setNewsSource(source);
+             
+                // Check if article already exists
+                Optional<NewsArticle> existingArticle = newsArticleRepository
+                    .findByUrl(article.getUrl());
+                
+                if (existingArticle.isPresent()) {
+                    // Update existing article
+                    NewsArticle existing = existingArticle.get();
+                    existing.setViewCount(existing.getViewCount() + 1); // Increment view count
+                    newsArticleRepository.save(existing);
+                    log.debug("Updated existing article: {}", existing.getTitle());
+                } else {
+                    // Save new article
+                    newsArticleRepository.save(article);
+                    savedCount++;
+                    log.debug("Saved new article: {}", article.getTitle());
+                }
+                
+            } catch (Exception e) {
+                log.error("Failed to process article: {} - {}", article.getTitle(), e.getMessage(), e);
+            }
+        }
+        
+        log.info("Processed {} articles, saved {} new articles", articles.size(), savedCount);
+        return savedCount;
+    }
+
+    @Override
+    @Transactional
+    public void updateSourceStatus(NewsSource source, boolean success, int articleCount) {
+        source.setLastFetchAt(Instant.now());
+        
+        if (success) {
+            source.setLastSuccessAt(Instant.now());
+            source.setConsecutiveFailures(0);
+            log.info("Source {} fetch successful. Articles: {}", source.getName(), articleCount);
+        } else {
+            source.setConsecutiveFailures(source.getConsecutiveFailures() + 1);
+            log.warn("Source {} fetch failed. Consecutive failures: {}", 
+                    source.getName(), source.getConsecutiveFailures());
+            
+            // Disable source if too many failures
+            if (source.getConsecutiveFailures() >= source.getMaxFailures()) {
+                source.setIsActive(false);
+                log.error("Source {} disabled due to {} consecutive failures", 
+                        source.getName(), source.getConsecutiveFailures());
+            }
+        }
+        
+        newsSourceRepository.save(source);
+    }
+
+    @Override
+    public boolean checkAllSourcesHealth() {
+        List<NewsSource> sources = newsSourceRepository.findByIsActiveTrueOrderByPriorityDesc();
+        boolean allHealthy = true;
+        
+        for (NewsSource source : sources) {
+            boolean isHealthy = checkSourceHealth(source);
+            if (!isHealthy) {
+                allHealthy = false;
+                log.warn("Source {} is unhealthy", source.getName());
+            }
+        }
+        
+        return allHealthy;
+    }
+
+    // Helper methods
+
+    private boolean checkSourceHealth(NewsSource source) {
+        if (source.getConsecutiveFailures() >= source.getMaxFailures()) {
+            return false;
+        }
+        
+        if (source.getLastSuccessAt() == null) {
+            return true; // Never fetched before
+        }
+        
+        // Check if last success was within 24 hours
+        return source.getLastSuccessAt().isAfter(Instant.now().minusSeconds(24 * 60 * 60));
+    }
+}

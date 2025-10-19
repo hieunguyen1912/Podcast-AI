@@ -38,8 +38,8 @@ public class UserFavorite extends AuditableEntity {
     private AudioFile audioFile;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "playlist_id")
-    private Playlist playlist;
+    @JoinColumn(name = "news_article_id")
+    private NewsArticle newsArticle;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "tts_config_id")
