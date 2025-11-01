@@ -5,6 +5,8 @@ import java.time.Instant;
 import com.google.auto.value.AutoValue.Builder;
 import com.hieunguyen.podcastai.enums.FetchType;
 
+import com.hieunguyen.podcastai.enums.SupportedCountry;
+import com.hieunguyen.podcastai.enums.SupportedLanguage;
 import lombok.Getter;
 import lombok.AllArgsConstructor;
 
@@ -12,13 +14,13 @@ import lombok.AllArgsConstructor;
 @Builder
 @AllArgsConstructor
 public class FetchConfigurationDto {
-    private Long newsSourceId;
+    private String sourceName;
     private FetchType fetchType;
     private Boolean enabled;
     private String keywords;
     private String languages;
     private String countries;
-    private Long categoryId;
+    private String categoryName;
     private Integer maxResults;
     private String sortBy;
     private Instant from;

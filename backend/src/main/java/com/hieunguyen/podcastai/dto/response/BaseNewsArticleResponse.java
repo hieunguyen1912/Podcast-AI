@@ -21,7 +21,6 @@ public abstract class BaseNewsArticleResponse {
     private String author;
     private Instant publishedAt;
     private String imageUrl;
-    private String language;
     private Long viewCount;
     private Long likeCount;
     private Long shareCount;

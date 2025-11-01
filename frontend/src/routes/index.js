@@ -6,6 +6,7 @@ const Login = lazy(() => import('../pages/LoginPage'));
 const Register = lazy(() => import('../pages/RegisterPage'));
 const Dashboard = lazy(() => import('../pages/DashboardPage'));
 const Podcast = lazy(() => import('../pages/PodcastPage'));
+const ArticleDetail = lazy(() => import('../pages/ArticleDetailPage'));
 const NotFound = lazy(() => import('../pages/NotFoundPage'));
 
 export const routes = [
@@ -38,6 +39,11 @@ export const routes = [
     path: '/podcast/:id',
     element: Podcast,
     protected: true
+  },
+  {
+    path: '/article/:id',
+    element: ArticleDetail,
+    public: true
   },
   {
     path: '*',

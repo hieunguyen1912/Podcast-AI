@@ -63,6 +63,10 @@ public enum ErrorCode {
     AUDIO_FILE_ACCESS_DENIED(5004, "Access denied to audio file", HttpStatus.FORBIDDEN),
     AUDIO_FILE_STORAGE_FAILED(5005, "Failed to store audio file", HttpStatus.INTERNAL_SERVER_ERROR),
     AUDIO_FILE_PROCESSING_FAILED(5006, "Audio file processing failed", HttpStatus.INTERNAL_SERVER_ERROR),
+
+
+    //Search error code
+    INVALID_SEARCH_INPUT(6001, "Invalid search input", HttpStatus.BAD_REQUEST),
     ;
 
     private final int code;

@@ -15,7 +15,6 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.Instant;
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 
@@ -28,13 +27,12 @@ public class NewsAggregationServiceImpl implements NewsAggregationService {
     private final NewsSourceRepository newsSourceRepository;
     private final NewsArticleRepository newsArticleRepository;
 
-
     @Override
     @Transactional
     public int fetchAllNews() {
         log.info("Starting to fetch news from all active sources");
         
-        List<NewsSource> activeSources = newsSourceRepository.findByIsActiveTrueOrderByPriorityDesc();
+        List<NewsSource> activeSources = newsSourceRepository.findByIsActiveTrue();
         int totalArticles = 0;
         
         for (NewsSource source : activeSources) {
@@ -63,20 +61,10 @@ public class NewsAggregationServiceImpl implements NewsAggregationService {
             return 0;
         }
         
-        log.info("Fetching news from source: {} (type: {})", source.getName(), source.getType());
+        log.info("Fetching news from source: {} (type: {})", source.getName(), source.getType().name());
         
         NewsSourceIntegrationService integrationService = newsSourceFactory.createService(source);
-        
-        List<NewsArticle> articles = new ArrayList<>();
-        if (integrationService != null) {
-            try {
-                articles = integrationService.fetchNews(source);
-            } catch (Exception e) {
-                log.error("Failed to fetch from integration service: {}", e.getMessage(), e);
-            }
-        } else {
-            log.warn("No integration service available for source: {}", source.getName());
-        }
+        List<NewsArticle> articles = integrationService.fetchNews(source);
         
         int savedCount = processAndSaveArticles(articles, source);
         updateSourceStatus(source, true, savedCount);
@@ -90,7 +78,7 @@ public class NewsAggregationServiceImpl implements NewsAggregationService {
         log.info("Fetching news from all sources of type: {}", sourceType);
         
         List<NewsSource> sources = newsSourceRepository
-            .findByTypeAndIsActiveTrueOrderByPriorityDesc(sourceType);
+            .findByTypeAndIsActiveTrue(sourceType);
         
         int totalArticles = 0;
         
@@ -121,9 +109,6 @@ public class NewsAggregationServiceImpl implements NewsAggregationService {
         
         for (NewsArticle article : articles) {
             try {
-                // Set source information
-                article.setNewsSource(source);
-             
                 // Check if article already exists
                 Optional<NewsArticle> existingArticle = newsArticleRepository
                     .findByUrl(article.getUrl());
@@ -153,23 +138,11 @@ public class NewsAggregationServiceImpl implements NewsAggregationService {
     @Override
     @Transactional
     public void updateSourceStatus(NewsSource source, boolean success, int articleCount) {
-        source.setLastFetchAt(Instant.now());
+        source.setLastSuccessAt(Instant.now());
         
         if (success) {
             source.setLastSuccessAt(Instant.now());
-            source.setConsecutiveFailures(0);
             log.info("Source {} fetch successful. Articles: {}", source.getName(), articleCount);
-        } else {
-            source.setConsecutiveFailures(source.getConsecutiveFailures() + 1);
-            log.warn("Source {} fetch failed. Consecutive failures: {}", 
-                    source.getName(), source.getConsecutiveFailures());
-            
-            // Disable source if too many failures
-            if (source.getConsecutiveFailures() >= source.getMaxFailures()) {
-                source.setIsActive(false);
-                log.error("Source {} disabled due to {} consecutive failures", 
-                        source.getName(), source.getConsecutiveFailures());
-            }
         }
         
         newsSourceRepository.save(source);
@@ -177,7 +150,7 @@ public class NewsAggregationServiceImpl implements NewsAggregationService {
 
     @Override
     public boolean checkAllSourcesHealth() {
-        List<NewsSource> sources = newsSourceRepository.findByIsActiveTrueOrderByPriorityDesc();
+        List<NewsSource> sources = newsSourceRepository.findByIsActiveTrue();
         boolean allHealthy = true;
         
         for (NewsSource source : sources) {
@@ -191,13 +164,7 @@ public class NewsAggregationServiceImpl implements NewsAggregationService {
         return allHealthy;
     }
 
-    // Helper methods
-
     private boolean checkSourceHealth(NewsSource source) {
-        if (source.getConsecutiveFailures() >= source.getMaxFailures()) {
-            return false;
-        }
-        
         if (source.getLastSuccessAt() == null) {
             return true; // Never fetched before
         }

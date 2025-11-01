@@ -1,6 +1,7 @@
 package com.hieunguyen.podcastai.service;
 
 
+import java.time.Instant;
 import java.util.List;
 import java.util.Optional;
 
@@ -13,6 +14,13 @@ import com.hieunguyen.podcastai.dto.response.NewsArticleSummaryResponse;
 public interface NewsService {
 
     Page<NewsArticleResponse> searchNewsBySpecification(Pageable pageable, String... search);
+    Page<NewsArticleResponse> searchFullText(
+            String keyword,
+            Long categoryId,
+            Instant fromDate,
+            Instant toDate,
+            Pageable pageable);
+    Page<NewsArticleSummaryResponse> findByCategoryId(Long categoryId, Pageable pageable);
     Optional<NewsArticleResponse> getNewsById(Long id);
     List<NewsArticleSummaryResponse> getLatestNews(int limit);
     List<NewsArticleSummaryResponse> getTrendingNews(int limit);

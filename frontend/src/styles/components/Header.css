@@ -215,6 +215,12 @@
   transition: all 0.2s ease;
   border: 1px solid transparent;
   cursor: pointer;
+  gap: 8px; /* Khoảng cách giữa icon và text */
+}
+
+.btn svg {
+  flex-shrink: 0;
+  vertical-align: middle;
 }
 
 .btn-outline {

@@ -159,10 +159,4 @@ public class TagServiceImpl implements TagService {
         log.info("Successfully set trending status for tag with ID: {}", id);
         return tagMapper.toDto(updatedTag);
     }
-    
-    @Override
-    @Transactional(readOnly = true)
-    public boolean existsByName(String name) {
-        return tagRepository.existsByNameIgnoreCase(name);
-    }
 }

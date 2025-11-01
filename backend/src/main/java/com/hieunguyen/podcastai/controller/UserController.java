@@ -21,7 +21,6 @@ import com.hieunguyen.podcastai.dto.request.user.PasswordChangeRequest;
 import com.hieunguyen.podcastai.dto.request.user.UserUpdateRequest;
 import com.hieunguyen.podcastai.dto.response.ApiResponse;
 import com.hieunguyen.podcastai.dto.response.UserDto;
-import com.hieunguyen.podcastai.entity.User;
 import com.hieunguyen.podcastai.service.UserService;
 
 import io.swagger.v3.oas.annotations.Operation;
@@ -108,6 +107,6 @@ public class UserController {
     public ResponseEntity<ApiResponse<List<UserDto>>> search(Pageable pageable, @RequestParam(value = "search", required = false) String... search) {
         Page<UserDto> users = userService.searchUserBySpecification(pageable, search);
 
-        return ResponseEntity.ok(ApiResponse.success("Users fetched successfully", users.getContent(), ApiResponse.PageInfo.from(users)));
+        return ResponseEntity.ok(ApiResponse.success("Users fetched successfully", users.getContent()));
     }
 }

@@ -2,6 +2,10 @@ package com.hieunguyen.podcastai.service.impl;
 
 import java.util.List;
 
+import com.hieunguyen.podcastai.enums.ErrorCode;
+import com.hieunguyen.podcastai.exception.AppException;
+import com.hieunguyen.podcastai.service.CategoryService;
+import com.hieunguyen.podcastai.service.NewsSourceService;
 import org.springframework.stereotype.Service;
 
 import com.hieunguyen.podcastai.dto.request.FetchConfigurationRequest;
@@ -23,35 +27,54 @@ public class FetchConfigurationServiceImpl implements FetchConfigurationService{
 
     private final FetchConfigurationRepository fetchConfigurationRepository;
     private final FetchConfigurationMapper fetchConfigurationMapper;
+    private final CategoryService categoryService;
+    private final NewsSourceService newsSourceService;
 
     @Override
     public FetchConfigurationDto createFetchConfiguration(FetchConfigurationRequest request) {
-        // TODO Auto-generated method stub
-        throw new UnsupportedOperationException("Unimplemented method 'createFetchConfiguration'");
+
+        if (request.getCategoryId() != null &&
+                categoryService.getCategoryById(request.getCategoryId()) == null) {
+            throw new AppException(ErrorCode.CATEGORY_NOT_FOUND);
+        }
+
+        if (newsSourceService.getSourceById(request.getNewsSourceId()) == null) {
+            throw new AppException(ErrorCode.RESOURCE_NOT_FOUND);
+        }
+
+        FetchConfiguration fetchConfiguration = fetchConfigurationMapper.toEntity(request);
+
+        return fetchConfigurationMapper.toDto(fetchConfigurationRepository.save(fetchConfiguration));
     }
 
     @Override
-    public FetchConfiguration getFetchConfigurationById(Long id) {
-        // TODO Auto-generated method stub
-        throw new UnsupportedOperationException("Unimplemented method 'getFetchConfigurationById'");
+    public FetchConfigurationDto getFetchConfigurationById(Long id) {
+        FetchConfiguration fetchConfiguration = fetchConfigurationRepository.findById(id)
+                .orElseThrow(() -> new AppException(ErrorCode.RESOURCE_NOT_FOUND));
+        return fetchConfigurationMapper.toDto(fetchConfiguration);
     }
 
     @Override
-    public FetchConfiguration updateFetchConfiguration(Long id, FetchConfigurationRequest request) {
-        // TODO Auto-generated method stub
-        throw new UnsupportedOperationException("Unimplemented method 'updateFetchConfiguration'");
+    @Transactional
+    public FetchConfigurationDto updateFetchConfiguration(Long id, FetchConfigurationRequest request) {
+        FetchConfiguration fetchConfiguration = fetchConfigurationRepository.findById(id)
+                .orElseThrow(() -> new AppException(ErrorCode.RESOURCE_NOT_FOUND));
+
+        fetchConfigurationMapper.updateEntity(request, fetchConfiguration);
+
+        return fetchConfigurationMapper.toDto(fetchConfigurationRepository.save(fetchConfiguration));
     }
 
     @Override
+    @Transactional
     public void deleteFetchConfiguration(Long id) {
-        // TODO Auto-generated method stub
-        throw new UnsupportedOperationException("Unimplemented method 'deleteFetchConfiguration'");
+        fetchConfigurationRepository.deleteById(id);
     }
 
     @Override
-    public List<FetchConfiguration> getAllFetchConfigurations() {
-        // TODO Auto-generated method stub
-        throw new UnsupportedOperationException("Unimplemented method 'getAllFetchConfigurations'");
+    public List<FetchConfigurationDto> getAllFetchConfigurations() {
+        List<FetchConfiguration> fetchConfiguration = fetchConfigurationRepository.findAll();
+        return fetchConfigurationMapper.toDtoList(fetchConfiguration);
     }
     
 }

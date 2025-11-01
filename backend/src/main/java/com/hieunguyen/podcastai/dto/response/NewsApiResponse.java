@@ -54,7 +54,7 @@ public class NewsApiResponse {
         private String urlToImage;
 
         @JsonProperty("publishedAt")
-        private String publishedAt; // ISO 8601 format
+        private String publishedAt;
 
         @JsonProperty("content")
         private String content;
@@ -72,8 +72,5 @@ public class NewsApiResponse {
 
         @JsonProperty("name")
         private String name;
-
-        @JsonProperty("url")  // ✅ THÊM TRƯỜNG NÀY
-        private String url;
     }
 }

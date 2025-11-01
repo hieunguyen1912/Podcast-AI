@@ -13,35 +13,43 @@ public class NewsScheduler {
 
     private final NewsAggregationService newsAggregationService;
 
-    /**
-     * Fetch news every 30 minutes
-     */
-    @Scheduled(fixedRate = 30 * 60 * 1000) // 30 minutes
+    @Scheduled(fixedRate = 30 * 60 * 1000)
     public void fetchNewsScheduled() {
         log.info("Starting scheduled news fetch");
-        
+        long startTime = System.currentTimeMillis();
+
         try {
             int articlesCount = newsAggregationService.fetchAllNews();
-            log.info("Scheduled fetch completed. Articles fetched: {}", articlesCount);
-            
+            long duration = System.currentTimeMillis() - startTime;
+
+            log.info("News fetch completed successfully. " +
+                            "Articles: {}, Duration: {}ms",
+                    articlesCount, duration);
+
         } catch (Exception e) {
-            log.error("Scheduled news fetch failed: {}", e.getMessage(), e);
+            log.error("News fetch failed after {}ms",
+                    System.currentTimeMillis() - startTime, e);
+            // Optional: Gửi alert nếu cần
+            // alertService.notifySchedulerFailure("fetchNews", e);
         }
     }
 
-    /**
-     * Health check every hour
-     */
-    @Scheduled(fixedRate = 60 * 60 * 1000) // 1 hour
+    @Scheduled(fixedRate = 60 * 60 * 1000)
     public void healthCheckScheduled() {
-        log.info("Starting scheduled health check");
-        
+        log.info("Starting health check");
+
         try {
             boolean isHealthy = newsAggregationService.checkAllSourcesHealth();
-            log.info("Health check completed. All sources healthy: {}", isHealthy);
-            
+
+            if (isHealthy) {
+                log.info("Health check: All sources OK");
+            } else {
+                log.warn("Health check: Some sources unhealthy");
+                // alertService.notifyUnhealthySources();
+            }
+
         } catch (Exception e) {
-            log.error("Scheduled health check failed: {}", e.getMessage(), e);
+            log.error("Health check failed", e);
         }
     }
 }

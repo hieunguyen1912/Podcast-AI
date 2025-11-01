@@ -6,19 +6,15 @@ import java.util.List;
 import com.hieunguyen.podcastai.entity.base.BaseEntity;
 
 import jakarta.persistence.*;
-import lombok.AllArgsConstructor;
-import lombok.Builder;
-import lombok.Data;
-import lombok.EqualsAndHashCode;
-import lombok.NoArgsConstructor;
+import lombok.*;
 
 @Entity
 @Table(name = "tts_configs")
-@Data
+@Getter
+@Setter
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
-@EqualsAndHashCode(callSuper = true)
 public class TtsConfig extends BaseEntity {
 
     @Column(name = "name", nullable = false, length = 100)

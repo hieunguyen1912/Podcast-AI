@@ -1,24 +1,17 @@
 package com.hieunguyen.podcastai.entity;
 
-import java.util.ArrayList;
-import java.util.List;
-
 import com.hieunguyen.podcastai.entity.base.AuditableEntity;
 import com.hieunguyen.podcastai.enums.ProcessingStatus;
 import jakarta.persistence.*;
-import lombok.AllArgsConstructor;
-import lombok.Builder;
-import lombok.Data;
-import lombok.EqualsAndHashCode;
-import lombok.NoArgsConstructor;
+import lombok.*;
 
 @Entity
 @Table(name = "audio_files")
-@Data
+@Getter
+@Setter
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
-@EqualsAndHashCode(callSuper = true)
 public class AudioFile extends AuditableEntity {
 
     @Column(name = "title", nullable = false, length = 200)

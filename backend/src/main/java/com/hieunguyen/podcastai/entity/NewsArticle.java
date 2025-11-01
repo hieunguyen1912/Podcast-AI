@@ -2,11 +2,7 @@ package com.hieunguyen.podcastai.entity;
 
 import com.hieunguyen.podcastai.entity.base.AuditableEntity;
 import jakarta.persistence.*;
-import lombok.AllArgsConstructor;
-import lombok.Builder;
-import lombok.Data;
-import lombok.EqualsAndHashCode;
-import lombok.NoArgsConstructor;
+import lombok.*;
 
 import java.time.Instant;
 import java.util.ArrayList;
@@ -14,11 +10,11 @@ import java.util.List;
 
 @Entity
 @Table(name = "news_articles")
-@Data
+@Getter
+@Setter
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
-@EqualsAndHashCode(callSuper = true)
 public class NewsArticle extends AuditableEntity {
 
     @Column(name = "title", nullable = false, length = 500)
@@ -36,9 +32,6 @@ public class NewsArticle extends AuditableEntity {
     @Column(name = "source_name", length = 200)
     private String sourceName;
 
-    @Column(name = "source_url", length = 1000)
-    private String sourceUrl;
-
     @Column(name = "author", length = 200)
     private String author;
 
@@ -52,10 +45,6 @@ public class NewsArticle extends AuditableEntity {
     @JoinColumn(name = "category_id")
     private Category category;
 
-    @Column(name = "language", length = 10)
-    @Builder.Default
-    private String language = "en";
-
     @Column(name = "view_count", nullable = false)
     @Builder.Default
     private Long viewCount = 0L;
@@ -68,21 +57,10 @@ public class NewsArticle extends AuditableEntity {
     @Builder.Default
     private Long shareCount = 0L;
 
-    // Relationships
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "news_source_id")
-    private NewsSource newsSource;
+    private NewsSource sources;
 
     @OneToMany(mappedBy = "newsArticle", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
     @Builder.Default
     private List<AudioFile> audioFiles = new ArrayList<>();
-
-    @ManyToMany
-    @JoinTable(
-        name = "news_article_tags",
-        joinColumns = @JoinColumn(name = "news_article_id"),
-        inverseJoinColumns = @JoinColumn(name = "tag_id")
-    )
-    @Builder.Default
-    private List<Tag> tags = new ArrayList<>();
 }

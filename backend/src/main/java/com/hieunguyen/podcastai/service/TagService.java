@@ -59,9 +59,4 @@ public interface TagService {
      * Set trending status for tag
      */
     TagDto setTrendingStatus(Long id, Boolean isTrending);
-    
-    /**
-     * Check if tag exists by name
-     */
-    boolean existsByName(String name);
 }

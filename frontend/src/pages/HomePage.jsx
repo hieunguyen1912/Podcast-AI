@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { motion } from 'framer-motion';
+import { useNavigate } from 'react-router-dom';
 import { 
   Play, 
   Volume2, 
@@ -9,8 +9,11 @@ import {
 } from 'lucide-react';
 import newsService from '../services/newsService';
 import { formatRelativeTime, formatNewsTime } from '../utils/formatTime';
+import ArticleCard from '../components/common/ArticleCard';
+import SearchBar from '../components/common/SearchBar';
 
 function HomePage() {
+  const navigate = useNavigate();
   const [isLoaded, setIsLoaded] = useState(false);
   const [isPlaying, setIsPlaying] = useState(false);
   const [currentAudio, setCurrentAudio] = useState(0);
@@ -23,6 +26,12 @@ function HomePage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
+  // Search state
+  const [categories, setCategories] = useState([]);
+  const [searchResults, setSearchResults] = useState([]);
+  const [isSearchMode, setIsSearchMode] = useState(false);
+  const [isSearching, setIsSearching] = useState(false);
+
   useEffect(() => {
     const fetchData = async () => {
       try {
@@ -30,15 +39,17 @@ function HomePage() {
         setError(null);
         
         // Fetch all data in parallel
-        const [featured, trending, latest] = await Promise.all([
+        const [featured, trending, latest, cats] = await Promise.all([
           newsService.getFeaturedArticle(),
           newsService.getTrendingArticles(3),
-          newsService.getLatestArticles(4)
+          newsService.getLatestArticles(4),
+          newsService.getCategories().catch(() => []) // Fetch categories, fallback to empty array
         ]);
         
         setFeaturedArticle(featured);
         setTrendingArticles(trending);
         setLatestArticles(latest);
+        setCategories(cats);
         
         // For basketball news, we'll filter from latest articles for now
         // In real implementation, you might have a specific endpoint
@@ -60,6 +71,68 @@ function HomePage() {
     fetchData();
   }, []);
 
+  // Search and pagination state
+  const [searchFilters, setSearchFilters] = useState({});
+  const [searchPagination, setSearchPagination] = useState({
+    page: 0,
+    size: 20,
+    totalElements: 0,
+    totalPages: 0,
+    hasNext: false,
+    hasPrevious: false
+  });
+
+  const handleSearch = async (filters, page = 0) => {
+    try {
+      setIsSearching(true);
+      setError(null);
+      
+      // Store filters for pagination
+      setSearchFilters(filters);
+      
+      // Convert dates to ISO format if provided
+      const formattedFilters = {
+        ...filters,
+        fromDate: filters.fromDate ? new Date(filters.fromDate).toISOString() : null,
+        toDate: filters.toDate ? new Date(filters.toDate).toISOString() : null
+      };
+
+      const response = await newsService.searchArticles(formattedFilters, page, 20);
+      
+      // Handle PaginatedResponse structure
+      if (response && response.content) {
+        setSearchResults(response.content);
+        setSearchPagination({
+          page: response.page || 0,
+          size: response.size || 20,
+          totalElements: response.totalElements || 0,
+          totalPages: response.totalPages || 0,
+          hasNext: response.hasNext || false,
+          hasPrevious: response.hasPrevious || false
+        });
+      } else {
+        // Fallback: assume response is array for backward compatibility
+        setSearchResults(Array.isArray(response) ? response : []);
+      }
+      setIsSearchMode(true);
+    } catch (err) {
+      console.error('Error searching articles:', err);
+      setError('Failed to search articles');
+    } finally {
+      setIsSearching(false);
+    }
+  };
+
+  const handlePageChange = (newPage) => {
+    handleSearch(searchFilters, newPage);
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  };
+
+  const handleBackToHome = () => {
+    setIsSearchMode(false);
+    setSearchResults([]);
+  };
+
   const handleTTS = () => {
     setIsPlaying(!isPlaying);
     // TODO: Implement TTS functionality
@@ -77,8 +150,12 @@ function HomePage() {
   const handleArticleClick = async (articleId) => {
     try {
       await newsService.trackArticleView(articleId);
+      // Navigate to article detail page
+      navigate(`/article/${articleId}`);
     } catch (error) {
       console.error('Error tracking article view:', error);
+      // Still navigate even if tracking fails
+      navigate(`/article/${articleId}`);
     }
   };
 
@@ -157,86 +234,121 @@ function HomePage() {
       {!loading && !error && (
         <>
       
+      {/* Search Bar Section */}
+      <section className="py-8 bg-gray-50">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <SearchBar 
+            onSearch={handleSearch}
+            categories={categories}
+          />
+        </div>
+      </section>
+
+      {/* Search Results */}
+      {isSearchMode && (
+        <section className="py-12">
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div className="flex items-center justify-between mb-8">
+              <h2 className="text-2xl font-bold text-gray-900">
+                Search Results
+                {searchPagination.totalElements > 0 && (
+                  <span className="text-lg font-normal text-gray-500 ml-2">
+                    ({searchPagination.totalElements} {searchPagination.totalElements === 1 ? 'article' : 'articles'})
+                  </span>
+                )}
+              </h2>
+              <button
+                onClick={handleBackToHome}
+                className="text-black hover:text-gray-600 transition-colors flex items-center gap-2"
+              >
+                <ChevronLeft className="h-5 w-5" />
+                Back to Home
+              </button>
+            </div>
+
+            {isSearching ? (
+              <div className="flex items-center justify-center py-12">
+                <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-black"></div>
+              </div>
+            ) : searchResults.length === 0 ? (
+              <div className="text-center py-12">
+                <p className="text-gray-600 text-lg">No articles found matching your search criteria.</p>
+              </div>
+            ) : (
+              <>
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-8">
+                  {searchResults.map((article, index) => (
+                    <ArticleCard
+                      key={article.id}
+                      article={article}
+                      layout="vertical"
+                      index={index}
+                      onClick={handleArticleClick}
+                    />
+                  ))}
+                </div>
+                
+                {/* Pagination Controls */}
+                {searchPagination.totalPages > 1 && (
+                  <div className="flex items-center justify-center gap-2 mt-8">
+                    <button
+                      onClick={() => handlePageChange(searchPagination.page - 1)}
+                      disabled={!searchPagination.hasPrevious || isSearching}
+                      className="px-4 py-2 border border-gray-300 rounded-lg disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-50 transition-colors flex items-center gap-2"
+                    >
+                      <ChevronLeft className="h-4 w-4" />
+                      Previous
+                    </button>
+                    
+                    <div className="flex items-center gap-2">
+                      <span className="px-4 py-2 text-gray-700">
+                        Page {searchPagination.page + 1} of {searchPagination.totalPages}
+                      </span>
+                    </div>
+                    
+                    <button
+                      onClick={() => handlePageChange(searchPagination.page + 1)}
+                      disabled={!searchPagination.hasNext || isSearching}
+                      className="px-4 py-2 border border-gray-300 rounded-lg disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-50 transition-colors flex items-center gap-2"
+                    >
+                      Next
+                      <ChevronRight className="h-4 w-4" />
+                    </button>
+                  </div>
+                )}
+              </>
+            )}
+          </div>
+        </section>
+      )}
+
       {/* Hero Section */}
+      {!isSearchMode && (
+        <>
       <section className="py-12">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
             {/* Main Article */}
             <div className="lg:col-span-2">
               {featuredArticle && (
-                <motion.div 
-                  className="bg-white rounded-lg overflow-hidden shadow-lg cursor-pointer"
-                  initial={{ opacity: 0, y: 20 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ duration: 0.6 }}
-                  onClick={() => handleArticleClick(featuredArticle.id)}
-                >
-                  <div className="relative">
-                    <img 
-                      src={featuredArticle.imageUrl || "https://images.unsplash.com/photo-1571019613454-1cb2f99b2d8b?w=800&h=400&fit=crop"}
-                      alt={featuredArticle.title}
-                      className="w-full h-80 object-cover"
-                    />
-                    <div className="absolute top-4 left-4">
-                      <span className="bg-orange-500 text-white px-3 py-1 rounded-full text-sm font-medium">
-                        {featuredArticle.categoryName || 'News'}
-                      </span>
-                    </div>
-                  </div>
-                  <div className="p-6">
-                    <div className="flex items-center mb-4">
-                      <div className="w-10 h-10 rounded-full mr-3 bg-gray-200 flex items-center justify-center">
-                        <span className="text-gray-600 font-semibold text-sm">
-                          {featuredArticle.author?.charAt(0)?.toUpperCase() || 'A'}
-                        </span>
-                      </div>
-                      <div>
-                        <p className="font-semibold text-gray-900">{featuredArticle.author || 'Anonymous'}</p>
-                        <p className="text-sm text-gray-500">Author</p>
-                      </div>
-                    </div>
-                    <h2 className="text-3xl font-bold text-gray-900 mb-4">
-                      {featuredArticle.title}
-                    </h2>
-                    <div className="flex items-center text-sm text-gray-500 mb-4">
-                      <span className="text-orange-500 font-medium mr-4">{featuredArticle.categoryName || 'News'}</span>
-                      <span>{formatNewsTime(featuredArticle.publishedAt)}</span>
-                      <span className="mx-2">•</span>
-                      <span>{featuredArticle.viewCount || 0} views</span>
-                </div>
-                </div>
-                </motion.div>
+                <ArticleCard
+                  article={featuredArticle}
+                  layout="featured"
+                  onClick={handleArticleClick}
+                />
               )}
             </div>
 
             {/* Side Articles */}
             <div className="space-y-6">
               {trendingArticles.map((article, index) => (
-                <motion.div
+                <ArticleCard
                   key={article.id}
-                  className="bg-white rounded-lg overflow-hidden shadow-md hover:shadow-lg transition-shadow cursor-pointer"
-                  initial={{ opacity: 0, x: 20 }}
-                  animate={{ opacity: 1, x: 0 }}
-                  transition={{ duration: 0.6, delay: index * 0.1 }}
-                  onClick={() => handleArticleClick(article.id)}
-                >
-                  <div className="flex">
-                    <div className="flex-1 p-4">
-                      <h3 className="font-semibold text-gray-900 mb-2 line-clamp-2">
-                        {article.title}
-                      </h3>
-                      <div className="flex items-center text-sm text-gray-500">
-                        <span className="text-orange-500 font-medium mr-2">{article.categoryName || 'News'}</span>
-                        <span>{formatNewsTime(article.publishedAt)}</span>
-                      </div>
-                    </div>
-                    <img 
-                      src={article.imageUrl || "https://images.unsplash.com/photo-1546519638-68e109498ffc?w=200&h=150&fit=crop"}
-                      alt={article.title}
-                      className="w-24 h-24 object-cover"
-                    />
-                  </div>
-                </motion.div>
+                  article={article}
+                  layout="horizontal"
+                  index={index}
+                  onClick={handleArticleClick}
+                />
               ))}
             </div>
           </div>
@@ -256,34 +368,13 @@ function HomePage() {
           
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
             {latestArticles.map((article, index) => (
-              <motion.article
+              <ArticleCard
                 key={article.id}
-                className="bg-white rounded-lg overflow-hidden shadow-md hover:shadow-lg transition-shadow cursor-pointer"
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.6, delay: index * 0.1 }}
-                onClick={() => handleArticleClick(article.id)}
-              >
-                <img 
-                  src={article.imageUrl || "https://images.unsplash.com/photo-1571019613454-1cb2f99b2d8b?w=300&h=200&fit=crop"}
-                  alt={article.title}
-                  className="w-full h-48 object-cover"
-                />
-                <div className="p-4">
-                  <div className="flex items-center text-sm text-gray-500 mb-2">
-                    <span>{article.author || 'Anonymous'}</span>
-                    <span className="mx-2">•</span>
-                    <span>{formatNewsTime(article.publishedAt)}</span>
-                  </div>
-                  <h3 className="font-semibold text-gray-900 mb-2 line-clamp-2">
-                    {article.title}
-                  </h3>
-                  <div className="flex items-center text-sm text-gray-500">
-                    <span className="text-orange-500 font-medium mr-2">{article.categoryName || 'News'}</span>
-                    <span>{article.viewCount || 0} views</span>
-                  </div>
-                </div>
-              </motion.article>
+                article={article}
+                layout="vertical"
+                index={index}
+                onClick={handleArticleClick}
+              />
             ))}
           </div>
         </div>
@@ -304,12 +395,9 @@ function HomePage() {
             {/* Video List */}
             <div className="lg:col-span-2 space-y-4">
               {videoNews.map((video, index) => (
-                <motion.div
+                <div
                   key={video.id}
                   className="flex bg-white rounded-lg overflow-hidden shadow-md hover:shadow-lg transition-shadow"
-                  initial={{ opacity: 0, x: -20 }}
-                  animate={{ opacity: 1, x: 0 }}
-                  transition={{ duration: 0.6, delay: index * 0.1 }}
                 >
                   <div className="relative w-32 h-24 flex-shrink-0">
                     <img 
@@ -335,17 +423,14 @@ function HomePage() {
                       <span>{video.watchTime}</span>
                     </div>
                   </div>
-                </motion.div>
+                </div>
                   ))}
                 </div>
 
             {/* Featured Video */}
             <div className="lg:col-span-1">
-              <motion.div
+              <div
                 className="bg-white rounded-lg overflow-hidden shadow-lg"
-                initial={{ opacity: 0, x: 20 }}
-                animate={{ opacity: 1, x: 0 }}
-                transition={{ duration: 0.6, delay: 0.3 }}
               >
                 <div className="relative">
                   <img 
@@ -371,7 +456,7 @@ function HomePage() {
                     <span>5 min watch</span>
                   </div>
                 </div>
-              </motion.div>
+              </div>
             </div>
                 </div>
               </div>
@@ -478,38 +563,19 @@ function HomePage() {
           
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
             {basketballNews.map((article, index) => (
-              <motion.article
+              <ArticleCard
                 key={article.id}
-                className="bg-white rounded-lg overflow-hidden shadow-md hover:shadow-lg transition-shadow cursor-pointer"
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.6, delay: index * 0.1 }}
-                onClick={() => handleArticleClick(article.id)}
-              >
-                <img 
-                  src={article.imageUrl || "https://images.unsplash.com/photo-1546519638-68e109498ffc?w=300&h=200&fit=crop"}
-                  alt={article.title}
-                  className="w-full h-48 object-cover"
-                />
-                <div className="p-4">
-                  <div className="flex items-center text-sm text-gray-500 mb-2">
-                    <span>{article.author || 'Anonymous'}</span>
-                    <span className="mx-2">•</span>
-                    <span>{formatNewsTime(article.publishedAt)}</span>
-                  </div>
-                  <h3 className="font-semibold text-gray-900 mb-2 line-clamp-2">
-                    {article.title}
-                  </h3>
-                  <div className="flex items-center text-sm text-gray-500">
-                    <span className="text-orange-500 font-medium mr-2">{article.categoryName || 'Basketball'}</span>
-                    <span>{article.viewCount || 0} views</span>
-                  </div>
-                </div>
-              </motion.article>
+                article={article}
+                layout="vertical"
+                index={index}
+                onClick={handleArticleClick}
+              />
             ))}
           </div>
         </div>
       </section>
+        </>
+      )}
         </>
       )}
     </div>

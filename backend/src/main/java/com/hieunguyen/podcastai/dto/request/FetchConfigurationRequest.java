@@ -4,7 +4,10 @@ import java.time.Instant;
 
 import com.hieunguyen.podcastai.enums.FetchType;
 
-import jakarta.validation.constraints.NotBlank;
+import com.hieunguyen.podcastai.enums.SupportedCountry;
+import com.hieunguyen.podcastai.enums.SupportedLanguage;
+import com.hieunguyen.podcastai.validation.Language;
+import jakarta.validation.constraints.*;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -15,17 +18,28 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor
 @AllArgsConstructor
 public class FetchConfigurationRequest {
-    @NotBlank(message = "News source ID is required")
+    @NotNull(message = "News source ID is required")
     private Long newsSourceId;
-    @NotBlank(message = "Fetch type is required")
+
+    @NotNull(message = "Fetch type is required")
     private FetchType fetchType;
+
     private Boolean enabled;
+
+    @Size(max = 200, message = "keywords must not exceed 200 characters")
     private String keywords;
+
+    @Language
     private String languages;
-    private String countries;
+
+    private SupportedCountry countries;
+
     private Long categoryId;
+
+    @Min(1)
+    @Max(100)
     private Integer maxResults;
-    private String sortBy;
+
     private Instant from;
     private Instant to;
 }

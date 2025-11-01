@@ -53,9 +53,4 @@ public class TtsConfigRequest {
     @Max(value = 48000, message = "Sample rate must not exceed 48000")
     private Integer sampleRateHertz;
 
-    @Builder.Default
-    private Boolean isDefault = false;
-
-    @Builder.Default
-    private Boolean isActive = true;
 }

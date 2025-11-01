@@ -32,12 +32,8 @@ public class CategoryRequest {
              message = "Slug must contain only lowercase letters, numbers, and hyphens")
     @UniqueCategorySlug(message = "Category slug must be unique")
     private String slug;
-    
-    @Pattern(regexp = "^(https?://)?([\\da-z\\.-]+)\\.([a-z\\.]{2,6})([/\\w \\.-]*)*/?$", 
+
+    @Pattern(regexp = "^(https?://)?([\\da-z\\.-]+)\\.([a-z\\.]{2,6})([/\\w \\.-]*)*/?$",
              message = "Icon URL must be a valid URL")
     private String iconUrl;
-    
-    private Integer sortOrder;
-    
-    private Long parentCategoryId;
 }

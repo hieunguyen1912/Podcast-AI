@@ -29,12 +29,10 @@ public class NewsArticleMapper {
             .author(entity.getAuthor())
             .publishedAt(entity.getPublishedAt())
             .imageUrl(entity.getImageUrl())
-            .language(entity.getLanguage())
             .viewCount(entity.getViewCount())
             .likeCount(entity.getLikeCount())
             .shareCount(entity.getShareCount())
             .category(mapCategory(entity))
-            .newsSource(mapNewsSource(entity))
             .build();
     }
 
@@ -55,12 +53,10 @@ public class NewsArticleMapper {
             .author(entity.getAuthor())
             .publishedAt(entity.getPublishedAt())
             .imageUrl(entity.getImageUrl())
-            .language(entity.getLanguage())
             .viewCount(entity.getViewCount())
             .likeCount(entity.getLikeCount())
             .shareCount(entity.getShareCount())
             .categoryName(entity.getCategory() != null ? entity.getCategory().getName() : null)
-            .newsSourceName(entity.getNewsSource() != null ? entity.getNewsSource().getDisplayName() : null)
             .build();
     }
 
@@ -102,22 +98,6 @@ public class NewsArticleMapper {
             .id(entity.getCategory().getId())
             .name(entity.getCategory().getName())
             .description(entity.getCategory().getDescription())
-            .build();
-    }
-
-    /**
-     * Map NewsSource entity to NewsSourceResponse DTO (full data)
-     */
-    private NewsArticleResponse.NewsSourceResponse mapNewsSource(NewsArticle entity) {
-        if (entity.getNewsSource() == null) {
-            return null;
-        }
-
-        return NewsArticleResponse.NewsSourceResponse.builder()
-            .id(entity.getNewsSource().getId())
-            .name(entity.getNewsSource().getName())
-            .displayName(entity.getNewsSource().getDisplayName())
-            .url(entity.getNewsSource().getUrl())
             .build();
     }
 }

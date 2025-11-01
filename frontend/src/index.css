@@ -4,6 +4,51 @@
 
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap');
 
+@layer base {
+  /* 
+   * CSS Variables để dùng trong custom CSS files (AuthPage.css, etc.)
+   * 
+   * LƯU Ý: Khi thay đổi màu trong tailwind.config.js, phải update các giá trị tương ứng ở đây
+   * để đảm bảo consistency giữa Tailwind classes và custom CSS
+   */
+  :root {
+    /* Colors - Phải match với tailwind.config.js */
+    --color-white: #ffffff;
+    --color-black: #000000;
+    --color-gray-50: #f9fafb;  /* tailwind.config.js: gray.50 */
+    --color-gray-100: #f3f4f6;  /* tailwind.config.js: gray.100 */
+    --color-gray-200: #e5e7eb;  /* tailwind.config.js: gray.200 */
+    --color-gray-300: #d1d5db;  /* tailwind.config.js: gray.300 */
+    --color-gray-400: #9ca3af;  /* tailwind.config.js: gray.400 */
+    --color-gray-500: #6b7280;  /* tailwind.config.js: gray.500 */
+    --color-gray-600: #4b5563;  /* tailwind.config.js: gray.600 */
+    --color-primary: #f97316;  /* tailwind.config.js: primary.500 */
+    
+    /* Spacing */
+    --space-1: 0.25rem;
+    --space-2: 0.5rem;
+    --space-3: 0.75rem;
+    --space-4: 1rem;
+    --space-6: 1.5rem;
+    --space-8: 2rem;
+    --space-12: 3rem;
+    
+    /* Border Radius */
+    --radius-sm: 0.375rem;
+    --radius-md: 0.5rem;
+    --radius-lg: 0.75rem;
+    
+    /* Shadows */
+    --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+    
+    /* Transitions */
+    --transition-normal: 0.2s ease;
+    
+    /* Typography */
+    --font-primary: 'Inter', system-ui, sans-serif;
+  }
+}
+
 * {
   margin: 0;
   padding: 0;
@@ -41,33 +86,17 @@ body {
 }
 
 *:focus-visible {
-  outline: 2px solid #f97316;
-  outline-offset: 2px;
+  outline: none;
 }
 
-/* Custom animations */
-@keyframes fadeIn {
-  from { opacity: 0; }
-  to { opacity: 1; }
+/* Custom animations - Only keep essential animations */
+@keyframes spin {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
 }
 
-@keyframes slideUp {
-  from { 
-    transform: translateY(10px); 
-    opacity: 0; 
-  }
-  to { 
-    transform: translateY(0); 
-    opacity: 1; 
-  }
-}
-
-.animate-fade-in {
-  animation: fadeIn 0.5s ease-in-out;
-}
-
-.animate-slide-up {
-  animation: slideUp 0.3s ease-out;
+.animate-spin {
+  animation: spin 0.6s linear infinite;
 }
 
 /* Line clamp utilities */
@@ -111,4 +140,15 @@ body {
 /* Smooth transitions for interactive elements */
 .transition-smooth {
   transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* Remove gaps below images */
+img {
+  display: block;
+}
+
+/* Ensure article card images have no gaps */
+.article-card img {
+  display: block;
+  line-height: 0;
 }

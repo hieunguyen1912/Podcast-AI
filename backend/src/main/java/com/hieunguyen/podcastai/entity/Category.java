@@ -1,24 +1,17 @@
 package com.hieunguyen.podcastai.entity;
 
-import com.hieunguyen.podcastai.entity.base.AuditableEntity;
+import com.hieunguyen.podcastai.entity.base.BaseEntity;
 import jakarta.persistence.*;
-import lombok.AllArgsConstructor;
-import lombok.Builder;
-import lombok.Data;
-import lombok.EqualsAndHashCode;
-import lombok.NoArgsConstructor;
+import lombok.*;
 
-import java.util.ArrayList;
-import java.util.List;
-
+@Getter
+@Setter
 @Entity
 @Table(name = "categories")
-@Data
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
-@EqualsAndHashCode(callSuper = true)
-public class Category extends AuditableEntity {
+public class Category extends BaseEntity {
     
     @Column(name = "name", nullable = false, unique = true, length = 100)
     private String name;
@@ -31,14 +24,4 @@ public class Category extends AuditableEntity {
     
     @Column(name = "icon_url")
     private String iconUrl;
-    
-    @Column(name = "sort_order")
-    private Integer sortOrder = 0;
-    
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "parent_category_id")
-    private Category parentCategory;
-    
-    @OneToMany(mappedBy = "parentCategory", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
-    private List<Category> subCategories = new ArrayList<>();
 }

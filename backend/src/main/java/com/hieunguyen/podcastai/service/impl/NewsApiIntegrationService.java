@@ -3,6 +3,7 @@ package com.hieunguyen.podcastai.service.impl;
 import com.hieunguyen.podcastai.dto.response.NewsApiResponse;
 import com.hieunguyen.podcastai.entity.NewsArticle;
 import com.hieunguyen.podcastai.entity.NewsSource;
+import com.hieunguyen.podcastai.enums.FetchType;
 import com.hieunguyen.podcastai.enums.NewsSourceType;
 import com.hieunguyen.podcastai.service.NewsSourceIntegrationService;
 import lombok.RequiredArgsConstructor;
@@ -15,13 +16,11 @@ import org.springframework.web.client.RestTemplate;
 import org.springframework.web.util.UriComponentsBuilder;
 
 import java.net.URI;
-import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 import java.util.stream.Collectors;
+import org.springframework.http.ResponseEntity;
 
 @Service
 @RequiredArgsConstructor
@@ -38,141 +37,98 @@ public class NewsApiIntegrationService implements NewsSourceIntegrationService {
     @Retryable(value = {RestClientException.class}, maxAttempts = 3, backoff = @Backoff(delay = 1000))
     public List<NewsArticle> fetchNews(NewsSource source) {
         log.info("Fetching news from News API: {}", source.getName());
-        
         List<NewsArticle> allArticles = new ArrayList<>();
-        
-        try {
-            // 1. Fetch from /everything endpoint
-            NewsApiResponse everythingResponse = fetchEverything(source);
-            List<NewsArticle> everythingArticles = convertToArticles(everythingResponse, source);
-            allArticles.addAll(everythingArticles);
-            
-            // 2. Fetch from /top-headlines endpoint
-            NewsApiResponse headlinesResponse = fetchTopHeadlines(source);
-            List<NewsArticle> headlinesArticles = convertToArticles(headlinesResponse, source);
-            allArticles.addAll(headlinesArticles);
-            
-            // 3. Remove duplicates
-            List<NewsArticle> uniqueArticles = removeDuplicates(allArticles);
-            
-            log.info("Fetched {} unique articles from News API", uniqueArticles.size());
-            return uniqueArticles;
-            
-        } catch (Exception e) {
-            log.error("Failed to fetch from News API: {}", e.getMessage(), e);
-            throw new RuntimeException("News API fetch failed", e);
+        if (source.getFetchConfigurations() == null) return allArticles;
+        for (var fetchConfig : source.getFetchConfigurations()) {
+            if (fetchConfig.getEnabled()) {
+                NewsApiResponse apiResponse = null;
+                if (fetchConfig.getFetchType() != null && fetchConfig.getFetchType().equals(FetchType.SEARCH)) {
+                    apiResponse = fetchEverything(source, fetchConfig);
+                } else {
+                    apiResponse = fetchTopHeadlines(source, fetchConfig);
+                }
+                if (apiResponse != null && apiResponse.getArticles() != null) {
+                    var articles = convertToArticles(apiResponse, fetchConfig);
+                    allArticles.addAll(articles);
+                }
+            }
         }
+        return removeDuplicates(allArticles);
     }
     
-    private NewsApiResponse fetchEverything(NewsSource source) {
+    private NewsApiResponse fetchEverything(NewsSource source, com.hieunguyen.podcastai.entity.FetchConfiguration fetchConfiguration) {
         try {
-            URI uri = buildEverythingUri(source);
-            log.debug("Requesting News API with URI: {}", uri);
-            
-            NewsApiResponse response = restTemplate.getForObject(uri, NewsApiResponse.class);
-            
-            if (response == null) {
-                log.error("News API returned null response");
+            URI uri = buildEverythingUri(source, fetchConfiguration);
+            log.debug("Requesting News API /everything with URI: {}", uri);
+            ResponseEntity<NewsApiResponse> response = restTemplate.exchange(uri, org.springframework.http.HttpMethod.GET, null, NewsApiResponse.class);
+            if (!response.getStatusCode().is2xxSuccessful() || response.getBody() == null) {
+                log.error("News API everything trả về lỗi. Code: {}, uri: {}", response.getStatusCode(), uri);
                 return createErrorResponse("No response from News API");
             }
-            
-            if (!"ok".equals(response.getStatus())) {
-                log.error("News API returned error status: {}, message: {}", 
-                         response.getStatus(), response.getMessage());
-                return response;
-            }
-            
-            log.info("Successfully retrieved {} articles from News API", 
-                    response.getArticles() != null ? response.getArticles().size() : 0);
-            
-            return response;
-            
+            return response.getBody();
+        } catch (org.springframework.web.client.HttpStatusCodeException httpEx) {
+            int status = httpEx.getStatusCode().value();
+            String errorBody = httpEx.getResponseBodyAsString();
+            log.error("News API everything error: status {}, body {}", status, errorBody);
+            return createErrorResponse("Error status: " + status);
         } catch (RestClientException e) {
             log.error("Failed to fetch everything from News API", e);
-            throw new RuntimeException("Failed to fetch everything: " + e.getMessage(), e);
+            return createErrorResponse("Failed request: " + e.getMessage());
         }
     }
-    
-    private NewsApiResponse fetchTopHeadlines(NewsSource source) {
+
+    private NewsApiResponse fetchTopHeadlines(NewsSource source, com.hieunguyen.podcastai.entity.FetchConfiguration fetchConfiguration) {
         try {
-            URI uri = buildTopHeadlinesUri(source);
-            log.debug("Requesting News API with URI: {}", uri);
-            
-            NewsApiResponse response = restTemplate.getForObject(uri, NewsApiResponse.class);
-            
-            if (response == null) {
-                log.error("News API returned null response");
+            URI uri = buildTopHeadlinesUri(source, fetchConfiguration);
+            log.debug("Requesting News API /top-headlines with URI: {}", uri);
+            ResponseEntity<NewsApiResponse> response = restTemplate.exchange(uri, org.springframework.http.HttpMethod.GET, null, NewsApiResponse.class);
+            if (!response.getStatusCode().is2xxSuccessful() || response.getBody() == null) {
+                log.error("News API top-headlines trả về lỗi. Code: {}, uri: {}", response.getStatusCode(), uri);
                 return createErrorResponse("No response from News API");
             }
-            
-            if (!"ok".equals(response.getStatus())) {
-                log.error("News API returned error status: {}, message: {}", 
-                         response.getStatus(), response.getMessage());
-                return response;
-            }
-            
-            log.info("Successfully retrieved {} headlines from News API", 
-                    response.getArticles() != null ? response.getArticles().size() : 0);
-            
-            return response;
-            
+            return response.getBody();
+        } catch (org.springframework.web.client.HttpStatusCodeException httpEx) {
+            int status = httpEx.getStatusCode().value();
+            String errorBody = httpEx.getResponseBodyAsString();
+            log.error("News API top-headlines error: status {}, body {}", status, errorBody);
+            return createErrorResponse("Error status: " + status);
         } catch (RestClientException e) {
             log.error("Failed to fetch top headlines from News API", e);
-            throw new RuntimeException("Failed to fetch top headlines: " + e.getMessage(), e);
+            return createErrorResponse("Failed request: " + e.getMessage());
         }
     }
-    
-    private URI buildEverythingUri(NewsSource source) {
+
+    private URI buildEverythingUri(NewsSource source, com.hieunguyen.podcastai.entity.FetchConfiguration fetchConfiguration) {
         UriComponentsBuilder builder = UriComponentsBuilder
-                .fromUriString(source.getUrl() + EVERYTHING_ENDPOINT);
-        
-        Map<String, Object> params = new HashMap<>();
-        params.put("apiKey", source.getApiKey());
-        params.put("q", "technology");
-        params.put("language", source.getLanguage() != null ? source.getLanguage() : "en");
-        params.put("sortBy", "publishedAt");
-        params.put("pageSize", source.getMaxArticlesPerFetch() != null ? source.getMaxArticlesPerFetch() : 100);
-        params.put("page", 1);
-        
-        if (source.getDescription() != null && source.getDescription().contains("technology")) {
-            params.put("q", "technology");
-        }
-        
-        params.put("from", LocalDateTime.now().minusDays(7).format(ISO_FORMATTER));
-        
-        for (Map.Entry<String, Object> entry : params.entrySet()) {
-            builder.queryParam(entry.getKey(), entry.getValue());
-        }
-        
+            .fromUriString(source.getApiBaseUrl() + EVERYTHING_ENDPOINT);
+        builder.queryParam("apiKey", source.getApiKey());
+        builder.queryParam("q", fetchConfiguration.getKeywords());
+        builder.queryParam("language", fetchConfiguration.getLanguages());
+        builder.queryParam("sortBy", fetchConfiguration.getSortBy());
+        builder.queryParam("pageSize", fetchConfiguration.getMaxResults());
+        builder.queryParam("page", 1);
+        builder.queryParam("from", fetchConfiguration.getFrom());
+        builder.queryParam("to", fetchConfiguration.getTo());
         return builder.build().toUri();
     }
-    
-    private URI buildTopHeadlinesUri(NewsSource source) {
+
+    private URI buildTopHeadlinesUri(NewsSource source, com.hieunguyen.podcastai.entity.FetchConfiguration fetchConfiguration) {
         UriComponentsBuilder builder = UriComponentsBuilder
-                .fromUriString(source.getUrl() + TOP_HEADLINES_ENDPOINT);
-        
-        Map<String, Object> params = new HashMap<>();
-        
-        params.put("apiKey", source.getApiKey());
-        params.put("country", source.getCountry() != null ? source.getCountry() : "us");
-        params.put("category", "technology");
-        params.put("language", source.getLanguage() != null ? source.getLanguage() : "en");
-        params.put("pageSize", source.getMaxArticlesPerFetch() != null ? source.getMaxArticlesPerFetch() : 100);
-        params.put("page", 1);
-        
-        for (Map.Entry<String, Object> entry : params.entrySet()) {
-            builder.queryParam(entry.getKey(), entry.getValue());
-        }
-        
+            .fromUriString(source.getApiBaseUrl() + TOP_HEADLINES_ENDPOINT);
+        builder.queryParam("apiKey", source.getApiKey());
+        builder.queryParam("country", fetchConfiguration.getCountries());
+        builder.queryParam("category", (fetchConfiguration.getCategory() != null && fetchConfiguration.getCategory().getName() != null) ? fetchConfiguration.getCategory().getName() : "");
+        builder.queryParam("language", fetchConfiguration.getLanguages());
+        builder.queryParam("pageSize", fetchConfiguration.getMaxResults());
+        builder.queryParam("page", 1);
+        builder.queryParam("q", fetchConfiguration.getKeywords());
         return builder.build().toUri();
     }
-    
-    
-    private List<NewsArticle> convertToArticles(NewsApiResponse response, NewsSource source) {
+
+    private List<NewsArticle> convertToArticles(NewsApiResponse response, com.hieunguyen.podcastai.entity.FetchConfiguration fetchConfiguration) {
         if (response == null || response.getArticles() == null) {
             return new ArrayList<>();
         }
-        
         return response.getArticles().stream()
             .map(articleDto -> {
                 NewsArticle.NewsArticleBuilder builder = NewsArticle.builder()
@@ -180,14 +136,11 @@ public class NewsApiIntegrationService implements NewsSourceIntegrationService {
                     .description(articleDto.getDescription())
                     .content(articleDto.getContent())
                     .url(articleDto.getUrl())
-                    .sourceName(articleDto.getSource().getName())
-                    .sourceUrl(articleDto.getSource().getUrl())
+                    .sourceName(articleDto.getSource() != null ? articleDto.getSource().getName() : null)
                     .author(articleDto.getAuthor())
                     .imageUrl(articleDto.getUrlToImage())
-                    .language(source.getLanguage() != null ? source.getLanguage() : "en")
-                    .newsSource(source);
-                
-                // Xử lý publishedAt nếu có
+                    .category(fetchConfiguration.getCategory())
+                    .sources(fetchConfiguration.getNewsSource());
                 if (articleDto.getPublishedAt() != null) {
                     try {
                         builder.publishedAt(java.time.Instant.parse(articleDto.getPublishedAt()));
@@ -195,7 +148,6 @@ public class NewsApiIntegrationService implements NewsSourceIntegrationService {
                         log.warn("Failed to parse publishedAt: {}", articleDto.getPublishedAt());
                     }
                 }
-                
                 return builder.build();
             })
             .collect(Collectors.toList());
@@ -228,11 +180,13 @@ public class NewsApiIntegrationService implements NewsSourceIntegrationService {
             // Tạo NewsSource test tạm thời
             NewsSource testSource = NewsSource.builder()
                     .name("test")
-                    .language("en")
-                    .maxArticlesPerFetch(1)
+                    .apiBaseUrl("https://newsapi.org/v2")
+                    .apiKey("591345a44bad433cbb40718ded78128d")
+                    .type(NewsSourceType.NEWS_API)
+                    .isActive(true)
                     .build();
             
-            NewsApiResponse response = fetchEverything(testSource);
+            NewsApiResponse response = fetchEverything(testSource, null); // Pass null for fetchConfig
             return response != null && "ok".equals(response.getStatus());
             
         } catch (Exception e) {

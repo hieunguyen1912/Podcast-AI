@@ -13,58 +13,15 @@ import java.util.List;
 
 @Mapper(componentModel = "spring", nullValuePropertyMappingStrategy = NullValuePropertyMappingStrategy.IGNORE)
 public interface AudioMapper {
-    
-    /**
-     * Convert AudioRequest to AudioFile entity
-     */
-    @Mapping(target = "fileName", ignore = true)
-    @Mapping(target = "filePath", ignore = true)
-    @Mapping(target = "fileSizeBytes", ignore = true)
-    @Mapping(target = "status", ignore = true)
-    @Mapping(target = "publishedAt", ignore = true)
-    @Mapping(target = "user", ignore = true)
-    @Mapping(target = "ttsConfig", ignore = true)
-    @Mapping(target = "newsArticle", ignore = true)
-    @Mapping(target = "sourceUrl", source = "newsArticleUrl")
+
     AudioFile toEntity(AudioRequest request);
-    
-    /**
-     * Convert AudioFile entity to AudioFileDto
-     */
-    @Mapping(target = "downloadUrl", expression = "java(\"/api/v1/audio/\" + audioFile.getId() + \"/download\")")
-    @Mapping(target = "streamUrl", expression = "java(\"/api/v1/audio/\" + audioFile.getId() + \"/stream\")")
-    @Mapping(target = "user", source = "user", qualifiedByName = "mapUser")
-    @Mapping(target = "ttsConfig", source = "ttsConfig", qualifiedByName = "mapTtsConfig")
+
     AudioFileDto toDto(AudioFile audioFile);
-    
-    /**
-     * Convert list of AudioFile entities to list of AudioFileDto
-     */
+
     List<AudioFileDto> toDtoList(List<AudioFile> audioFiles);
-    
-    /**
-     * Update AudioFile entity from AudioRequest
-     */
-    @Mapping(target = "id", ignore = true)
-    @Mapping(target = "fileName", ignore = true)
-    @Mapping(target = "filePath", ignore = true)
-    @Mapping(target = "fileSizeBytes", ignore = true)
-    @Mapping(target = "status", ignore = true)
-    @Mapping(target = "publishedAt", ignore = true)
-    @Mapping(target = "user", ignore = true)
-    @Mapping(target = "ttsConfig", ignore = true)
-    @Mapping(target = "newsArticle", ignore = true)
-    @Mapping(target = "sourceUrl", source = "newsArticleUrl")
-    @Mapping(target = "createdAt", ignore = true)
-    @Mapping(target = "updatedAt", ignore = true)
-    @Mapping(target = "createdBy", ignore = true)
-    @Mapping(target = "updatedBy", ignore = true)
-    @Mapping(target = "version", ignore = true)
+
     void updateEntity(AudioRequest request, @MappingTarget AudioFile audioFile);
-    
-    /**
-     * Map User entity to UserDto (simplified)
-     */
+
     @Named("mapUser")
     default com.hieunguyen.podcastai.dto.response.UserDto mapUser(com.hieunguyen.podcastai.entity.User user) {
         if (user == null) {
@@ -104,8 +61,8 @@ public interface AudioMapper {
             .volumeGainDb(ttsConfig.getVolumeGainDb())
             .audioEncoding(ttsConfig.getAudioEncoding())
             .sampleRateHertz(ttsConfig.getSampleRateHertz())
-            .createdAt(ttsConfig.getCreatedAt() != null ? ttsConfig.getCreatedAt().atZone(java.time.ZoneId.systemDefault()).toLocalDateTime() : null)
-            .updatedAt(ttsConfig.getUpdatedAt() != null ? ttsConfig.getUpdatedAt().atZone(java.time.ZoneId.systemDefault()).toLocalDateTime() : null)
+            .createdAt(ttsConfig.getCreatedAt() != null ? ttsConfig.getCreatedAt().atZone(java.time.ZoneId.systemDefault()).toInstant() : null)
+            .updatedAt(ttsConfig.getUpdatedAt() != null ? ttsConfig.getUpdatedAt().atZone(java.time.ZoneId.systemDefault()).toInstant() : null)
             .userId(ttsConfig.getUser() != null ? ttsConfig.getUser().getId() : null)
             .build();
     }

@@ -165,16 +165,5 @@ public class TagController {
         
         return ResponseEntity.ok(ApiResponse.success("Trending status updated successfully", tag));
     }
-    
-    /**
-     * Check if tag exists by name
-     */
-    @GetMapping("/exists/name/{name}")
-    public ResponseEntity<ApiResponse<Boolean>> existsByName(@PathVariable String name) {
-        log.info("Checking if tag exists by name: {}", name);
-        
-        boolean exists = tagService.existsByName(name);
-        
-        return ResponseEntity.ok(ApiResponse.success("Tag existence checked successfully", exists));
-    }
+
 }

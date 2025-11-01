@@ -32,7 +32,7 @@ public class NewsSourceFactory {
     private NewsSourceIntegrationService createServiceByType(NewsSource source) {
         return switch (source.getType()) {
             case NEWS_API -> new NewsApiIntegrationService(restTemplate);
-            // case GNEWS_API -> new GNewsIntegrationService(restTemplate);
+            case GNEWS_API -> new GNewsIntegrationService(restTemplate);
             // case MEDIASTACK_API -> new MediastackIntegrationService(restTemplate);
             // case RSS_FEED -> new RssIntegrationService(restTemplate);
             // case CUSTOM_API -> new CustomApiIntegrationService(restTemplate);

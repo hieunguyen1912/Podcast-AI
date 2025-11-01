@@ -3,24 +3,20 @@ package com.hieunguyen.podcastai.repository;
 import com.hieunguyen.podcastai.entity.NewsSource;
 import com.hieunguyen.podcastai.enums.NewsSourceType;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
-
-import java.time.Instant;
+        
 import java.util.List;
-import java.util.Optional;
 
 @Repository
 public interface NewsSourceRepository extends JpaRepository<NewsSource, Long> {
+    List<NewsSource> findByIsActiveTrue();
 
-    /**
-     * Find all active sources
-     */
-    List<NewsSource> findByIsActiveTrueOrderByPriorityDesc();
+    List<NewsSource> findByTypeAndIsActiveTrue(NewsSourceType type);
 
-    /**
-     * Find sources by type
-     */
-    List<NewsSource> findByTypeAndIsActiveTrueOrderByPriorityDesc(NewsSourceType type);
+    @Modifying
+    @Query("UPDATE NewsSource n SET n.isActive = :active WHERE n.id = :id")
+    void updateActiveStatus(@Param("id") Long id, @Param("active") boolean active);
 }

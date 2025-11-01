@@ -8,6 +8,7 @@ import com.hieunguyen.podcastai.repository.NewsArticleRepository;
 import com.hieunguyen.podcastai.specification.SpecificationsBuilder;
 import com.hieunguyen.podcastai.service.NewsService;
 
+import com.hieunguyen.podcastai.validation.SearchValidator;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
@@ -16,6 +17,7 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 
+import java.time.Instant;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
@@ -29,6 +31,7 @@ public class NewsServiceImpl implements NewsService {
 
     private final NewsArticleRepository newsArticleRepository;
     private final NewsArticleMapper newsArticleMapper;
+    private final SearchValidator validator;
 
     @Override
     public Page<NewsArticleResponse> searchNewsBySpecification(Pageable pageable, String... search) {
@@ -66,6 +69,30 @@ public class NewsServiceImpl implements NewsService {
         
         // Convert to DTO
         return articles.map(newsArticleMapper::toDto);
+    }
+
+    @Override
+    public Page<NewsArticleResponse> searchFullText(
+            String keyword,
+            Long categoryId,
+            Instant fromDate,
+            Instant toDate,
+            Pageable pageable) {
+        log.info("=== FULL-TEXT SEARCH START ===");
+        log.info("keyword: {}, categoryId: {}, fromDate: {}, toDate: {}",
+                keyword, categoryId, fromDate, toDate);
+
+        String sanitized = validator.sanitizeKeyword(keyword);
+
+        Page<NewsArticle> articles = newsArticleRepository.fullTextSearch(sanitized, categoryId, fromDate, toDate, pageable);
+
+        return articles.map(newsArticleMapper::toDto);
+    }
+
+    @Override
+    public Page<NewsArticleSummaryResponse> findByCategoryId(Long categoryId, Pageable pageable) {
+        Page<NewsArticle> newsArticles = newsArticleRepository.findByCategoryId(categoryId, pageable);
+        return newsArticles.map(newsArticleMapper::toSummaryDto);
     }
 
     @Override

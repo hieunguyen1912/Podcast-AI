@@ -32,6 +32,5 @@ public class NewsArticleResponse extends BaseNewsArticleResponse {
         private Long id;
         private String name;
         private String displayName;
-        private String url;
     }
 }

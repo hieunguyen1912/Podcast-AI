@@ -1,9 +1,9 @@
 package com.hieunguyen.podcastai.controller;
 
+import com.google.protobuf.Api;
+import org.hibernate.annotations.Fetch;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
 import com.hieunguyen.podcastai.dto.request.FetchConfigurationRequest;
 import com.hieunguyen.podcastai.dto.response.ApiResponse;
@@ -14,7 +14,10 @@ import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 
-@RestController("/api/v1/fetch-configurations")
+import java.util.List;
+
+@RestController
+@RequestMapping("/api/v1/fetch-configurations")
 @Slf4j
 @RequiredArgsConstructor
 public class FetchConfigurationController {
@@ -29,5 +32,28 @@ public class FetchConfigurationController {
         FetchConfigurationDto fetchConfiguration = fetchConfigurationService.createFetchConfiguration(request);
         
         return ResponseEntity.ok(ApiResponse.success("Fetch configuration created successfully", fetchConfiguration));
+    }
+
+    @GetMapping
+    public ResponseEntity<ApiResponse<List<FetchConfigurationDto>>> getAllFetchConfigurations() {
+
+        List<FetchConfigurationDto> fetchConfigurationDto = fetchConfigurationService.getAllFetchConfigurations();
+
+        return ResponseEntity.ok(ApiResponse.success("fetch configurations", fetchConfigurationDto));
+    }
+
+    @PutMapping("/{id}")
+    public ResponseEntity<ApiResponse<FetchConfigurationDto>> updateFetchConfiguration(
+            @PathVariable Long id,
+            @Valid @RequestBody FetchConfigurationRequest request) {
+        FetchConfigurationDto response = fetchConfigurationService.updateFetchConfiguration(id, request);
+
+        return ResponseEntity.ok(ApiResponse.success("Fetch configuration updated successfully", response));
+    }
+
+    @DeleteMapping("/{id}")
+    public ResponseEntity<ApiResponse<Void>> deleteFetchConfiguration(@PathVariable Long id) {
+        fetchConfigurationService.deleteFetchConfiguration(id);
+        return ResponseEntity.ok(ApiResponse.success("delete fetch config successful", null));
     }
 }

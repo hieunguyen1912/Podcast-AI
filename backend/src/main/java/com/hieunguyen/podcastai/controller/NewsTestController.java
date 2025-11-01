@@ -164,7 +164,7 @@ public class NewsTestController {
         log.info("Getting active news sources");
         
         try {
-            List<NewsSource> sources = newsSourceRepository.findByIsActiveTrueOrderByPriorityDesc();
+            List<NewsSource> sources = newsSourceRepository.findByIsActiveTrue();
             
             Map<String, Object> response = new HashMap<>();
             response.put("success", true);
@@ -227,7 +227,7 @@ public class NewsTestController {
         try {
             long totalArticles = newsArticleRepository.count();
             long totalSources = newsSourceRepository.count();
-            long activeSources = newsSourceRepository.findByIsActiveTrueOrderByPriorityDesc().size();
+            long activeSources = newsSourceRepository.findByIsActiveTrue().size();
             
             Map<String, Object> response = new HashMap<>();
             response.put("success", true);

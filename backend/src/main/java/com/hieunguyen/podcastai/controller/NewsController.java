@@ -3,7 +3,9 @@ package com.hieunguyen.podcastai.controller;
 import com.hieunguyen.podcastai.dto.response.ApiResponse;
 import com.hieunguyen.podcastai.dto.response.NewsArticleResponse;
 import com.hieunguyen.podcastai.dto.response.NewsArticleSummaryResponse;
+import com.hieunguyen.podcastai.dto.response.PaginatedResponse;
 import com.hieunguyen.podcastai.service.NewsService;
+import com.hieunguyen.podcastai.util.PaginationHelper;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
@@ -11,6 +13,7 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import java.time.Instant;
 import java.util.List;
 
 @RestController
@@ -21,14 +24,21 @@ public class NewsController {
     private final NewsService newsService;
     
     @GetMapping("/search")
-    public ResponseEntity<ApiResponse<Page<NewsArticleResponse>>> search(Pageable pageable, 
-        @RequestParam(value = "search", required = false) String... search) {
-        
-        log.info("Searching news with criteria: {}", (Object) search);
-        
-        Page<NewsArticleResponse> responsePage = newsService.searchNewsBySpecification(pageable, search);
-        
-        return ResponseEntity.ok(ApiResponse.success("News fetched successfully", responsePage, ApiResponse.PageInfo.from(responsePage)));
+    public ResponseEntity<ApiResponse<PaginatedResponse<NewsArticleResponse>>> search(
+            Pageable pageable,
+            @RequestParam(value = "categoryId", required = false) Long categoryId,
+            @RequestParam(value = "fromDate", required = false) Instant fromDate,
+            @RequestParam(value = "toDate", required = false) Instant toDate,
+            @RequestParam(value = "keyword", required = false) String keyword) {
+        log.info("API: Search news - keyword: {}", keyword);
+        log.info("keyword: {}, categoryId: {}, fromDate: {}, toDate: {}",
+                keyword, categoryId, fromDate, toDate);
+
+        Page<NewsArticleResponse> newsArticles  = newsService.searchFullText(keyword, categoryId, fromDate, toDate, pageable);
+
+        PaginatedResponse<NewsArticleResponse> paginatedResponse = PaginationHelper.toPaginatedResponse(newsArticles);
+
+        return ResponseEntity.ok(ApiResponse.success("News fetched successfully", paginatedResponse));
     }
 
     @GetMapping("/latest")
@@ -69,5 +79,17 @@ public class NewsController {
         return newsService.getNewsById(id)
             .map(response -> ResponseEntity.ok(ApiResponse.success("News article fetched successfully", response)))
             .orElse(ResponseEntity.notFound().build());
+    }
+
+    @GetMapping("/category/{categoryId}")
+    public ResponseEntity<ApiResponse<PaginatedResponse<NewsArticleSummaryResponse>>> getByCategory(
+            @PathVariable Long categoryId,
+            Pageable pageable) {
+
+        Page<NewsArticleSummaryResponse> newsArticles = newsService.findByCategoryId(categoryId, pageable);
+
+        PaginatedResponse<NewsArticleSummaryResponse> paginatedResponse = PaginationHelper.toPaginatedResponse(newsArticles);
+
+        return ResponseEntity.ok(ApiResponse.success("News fetched successfully", paginatedResponse));
     }
 }
