@@ -25,6 +25,8 @@ function CommentSection({ articleId }) {
   const [content, setContent] = useState('');
   const [editingId, setEditingId] = useState(null);
   const [editContent, setEditContent] = useState('');
+  const [editingReplyId, setEditingReplyId] = useState(null);
+  const [editReplyContent, setEditReplyContent] = useState('');
   const [replyingTo, setReplyingTo] = useState(null);
   const [replyContent, setReplyContent] = useState('');
   const [expandedReplies, setExpandedReplies] = useState({});
@@ -157,6 +159,22 @@ function CommentSection({ articleId }) {
     }
   };
 
+  const handleUpdateReply = async (replyId) => {
+    if (!editReplyContent.trim()) return;
+
+    setIsSubmitting(true);
+    try {
+      await updateComment(replyId, editReplyContent.trim());
+      setEditingReplyId(null);
+      setEditReplyContent('');
+      showMessage('Reply updated successfully', 'success');
+    } catch (err) {
+      showMessage(err.message || 'Failed to update reply', 'error');
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
   const handleDelete = async (commentId) => {
     if (!window.confirm('Are you sure you want to delete this comment?')) {
       return;
@@ -200,6 +218,16 @@ function CommentSection({ articleId }) {
   const cancelEdit = () => {
     setEditingId(null);
     setEditContent('');
+  };
+
+  const startEditReply = (reply) => {
+    setEditingReplyId(reply.id);
+    setEditReplyContent(reply.content);
+  };
+
+  const cancelEditReply = () => {
+    setEditingReplyId(null);
+    setEditReplyContent('');
   };
 
   const getAvatarUrl = (user) => {
@@ -499,9 +527,19 @@ function CommentSection({ articleId }) {
                                   <span className="text-xs text-gray-500 ml-2">
                                     {formatNewsTime(reply.createdAt)}
                                   </span>
+                                  {reply.updatedAt && reply.updatedAt !== reply.createdAt && (
+                                    <span className="text-xs text-gray-400 ml-2">(edited)</span>
+                                  )}
                                 </div>
                                 {isAuthenticated && user?.id === reply.user?.id && (
                                   <div className="flex items-center gap-2">
+                                    <button
+                                      onClick={() => startEditReply(reply)}
+                                      className="text-gray-500 hover:text-gray-700 p-1"
+                                      title="Edit reply"
+                                    >
+                                      <Edit2 className="h-3 w-3" />
+                                    </button>
                                     <button
                                       onClick={() => handleDelete(reply.id)}
                                       className="text-red-500 hover:text-red-700 p-1"
@@ -512,9 +550,36 @@ function CommentSection({ articleId }) {
                                   </div>
                                 )}
                               </div>
-                              <p className="text-sm text-gray-700 whitespace-pre-wrap">
-                                {reply.content}
-                              </p>
+                              {editingReplyId === reply.id ? (
+                                <div className="space-y-2">
+                                  <textarea
+                                    value={editReplyContent}
+                                    onChange={(e) => setEditReplyContent(e.target.value)}
+                                    rows={2}
+                                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-black focus:border-transparent resize-none text-sm"
+                                    maxLength={5000}
+                                  />
+                                  <div className="flex items-center gap-2">
+                                    <button
+                                      onClick={() => handleUpdateReply(reply.id)}
+                                      disabled={!editReplyContent.trim() || isSubmitting}
+                                      className="px-3 py-1 bg-black text-white text-xs rounded-lg hover:bg-gray-800 disabled:opacity-50"
+                                    >
+                                      Save
+                                    </button>
+                                    <button
+                                      onClick={cancelEditReply}
+                                      className="px-3 py-1 bg-gray-200 text-gray-700 text-xs rounded-lg hover:bg-gray-300"
+                                    >
+                                      Cancel
+                                    </button>
+                                  </div>
+                                </div>
+                              ) : (
+                                <p className="text-sm text-gray-700 whitespace-pre-wrap">
+                                  {reply.content}
+                                </p>
+                              )}
                             </div>
                           </div>
                         ))

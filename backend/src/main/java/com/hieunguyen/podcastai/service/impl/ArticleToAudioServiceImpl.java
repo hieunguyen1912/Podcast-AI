@@ -68,11 +68,6 @@ public class ArticleToAudioServiceImpl implements ArticleToAudioService {
         NewsArticle article = articleRepository.findById(articleId)
                 .orElseThrow(() -> new AppException(ErrorCode.ARTICLE_NOT_FOUND));
 
-        // Validate ownership
-        if (!article.getAuthor().getId().equals(currentUser.getId())) {
-            throw new AppException(ErrorCode.FORBIDDEN);
-        }
-
         VoiceSettingsRequest voiceSettings = resolveVoiceSettings(request, currentUser);
         
         // 4. Convert article to SSML

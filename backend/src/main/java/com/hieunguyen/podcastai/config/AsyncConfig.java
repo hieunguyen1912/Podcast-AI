@@ -10,10 +10,6 @@ import org.springframework.scheduling.concurrent.ThreadPoolTaskExecutor;
 import java.util.concurrent.Executor;
 import java.util.concurrent.ThreadPoolExecutor;
 
-/**
- * Configuration for asynchronous processing
- * Enables @Async annotation and configures thread pool for background tasks
- */
 @Configuration
 @EnableAsync
 @Slf4j
@@ -31,11 +27,6 @@ public class AsyncConfig {
     @Value("${async.executor.thread-name-prefix:tts-async-}")
     private String threadNamePrefix;
 
-    /**
-     * Thread pool executor for TTS audio generation tasks
-     * 
-     * @return Executor bean for async processing
-     */
     @Bean(name = "ttsTaskExecutor")
     public Executor ttsTaskExecutor() {
         ThreadPoolTaskExecutor executor = new ThreadPoolTaskExecutor();
@@ -67,9 +58,6 @@ public class AsyncConfig {
         return executor;
     }
 
-    /**
-     * General purpose async executor for other background tasks
-     */
     @Bean(name = "taskExecutor")
     public Executor taskExecutor() {
         ThreadPoolTaskExecutor executor = new ThreadPoolTaskExecutor();

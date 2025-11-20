@@ -37,7 +37,7 @@ public interface UserRepository extends JpaRepository<User, Long>, JpaSpecificat
     Optional<User> findByIdWithDefaultTtsConfig(@Param("id") Long id);
 
 
-    @Query("SELECT u FROM User u JOIN u.roles r WHERE r.name = :roleName")
+    @Query("SELECT u FROM User u JOIN u.roles r WHERE r.code = :roleName")
     List<User> findUsersByRole(@Param("roleName") String roleName);
     
     // Stats queries

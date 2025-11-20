@@ -3,9 +3,9 @@ package com.hieunguyen.podcastai.listener;
 import com.hieunguyen.podcastai.dto.request.FcmNotificationRequest;
 import com.hieunguyen.podcastai.entity.Notification;
 import com.hieunguyen.podcastai.entity.User;
-import com.hieunguyen.podcastai.entity.base.BaseEntity;
 
 import com.hieunguyen.podcastai.enums.NotificationType;
+import com.hieunguyen.podcastai.enums.UserStatus;
 import com.hieunguyen.podcastai.event.ArticleApprovedEvent;
 import com.hieunguyen.podcastai.event.ArticleRejectedEvent;
 import com.hieunguyen.podcastai.event.ArticleSubmittedEvent;
@@ -151,6 +151,9 @@ public class NotificationEventListener {
     private List<Long> getAdminUserIds() {
         List<User> users = userRepository.findUsersByRole("ADMIN");
 
-        return users.stream().map(BaseEntity::getId).toList();
+        return users.stream()
+                .filter(user -> user.getStatus() == UserStatus.ACTIVE)
+                .map(User::getId)
+                .toList();
     }
 }

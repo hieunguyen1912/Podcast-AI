@@ -24,10 +24,6 @@ public class NotificationController {
 
     private final NotificationService notificationService;
 
-    /**
-     * Lấy danh sách notifications của user hiện tại
-     * GET /api/v1/user/me/notifications
-     */
     @GetMapping
     public ResponseEntity<ApiResponse<PaginatedResponse<NotificationDto>>> getUserNotifications(
             @RequestParam(defaultValue = "0") int page,
@@ -48,10 +44,6 @@ public class NotificationController {
         );
     }
 
-    /**
-     * Đếm số notifications chưa đọc
-     * GET /api/v1/user/me/notifications/unread-count
-     */
     @GetMapping("/unread-count")
     public ResponseEntity<ApiResponse<Long>> getUnreadCount() {
         log.info("Getting unread notification count");
@@ -63,10 +55,6 @@ public class NotificationController {
         );
     }
 
-    /**
-     * Đánh dấu notification đã đọc
-     * PUT /api/v1/user/me/notifications/{id}/read
-     */
     @PutMapping("/{id}/read")
     public ResponseEntity<ApiResponse<Void>> markAsRead(@PathVariable Long id) {
         log.info("Marking notification ID: {} as read", id);
@@ -78,10 +66,6 @@ public class NotificationController {
         );
     }
 
-    /**
-     * Đánh dấu tất cả notifications đã đọc
-     * PUT /api/v1/user/me/notifications/read-all
-     */
     @PutMapping("/read-all")
     public ResponseEntity<ApiResponse<Void>> markAllAsRead() {
         log.info("Marking all notifications as read");
@@ -93,10 +77,6 @@ public class NotificationController {
         );
     }
 
-    /**
-     * Xóa một notification
-     * DELETE /api/v1/user/me/notifications/{id}
-     */
     @DeleteMapping("/{id}")
     public ResponseEntity<ApiResponse<Void>> deleteNotification(@PathVariable Long id) {
         log.info("Deleting notification ID: {}", id);
@@ -108,10 +88,6 @@ public class NotificationController {
         );
     }
 
-    /**
-     * Xóa tất cả notifications đã đọc
-     * DELETE /api/v1/user/me/notifications/read
-     */
     @DeleteMapping("/read")
     public ResponseEntity<ApiResponse<Void>> deleteAllReadNotifications() {
         log.info("Deleting all read notifications");
