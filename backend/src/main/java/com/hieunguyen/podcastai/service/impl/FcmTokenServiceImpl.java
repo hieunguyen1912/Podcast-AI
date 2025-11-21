@@ -1,4 +1,4 @@
-package com.hieunguyen.podcastai.service;
+package com.hieunguyen.podcastai.service.impl;
 
 import com.hieunguyen.podcastai.entity.FcmToken;
 import com.hieunguyen.podcastai.entity.User;
@@ -6,6 +6,7 @@ import com.hieunguyen.podcastai.enums.ErrorCode;
 import com.hieunguyen.podcastai.exception.AppException;
 import com.hieunguyen.podcastai.repository.FcmTokenRepository;
 import com.hieunguyen.podcastai.repository.UserRepository;
+import com.hieunguyen.podcastai.service.FcmTokenService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
