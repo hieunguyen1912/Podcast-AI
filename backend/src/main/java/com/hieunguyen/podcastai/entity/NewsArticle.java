@@ -63,13 +63,15 @@ public class NewsArticle extends AuditableEntity {
     @Builder.Default
     private Long likeCount = 0L;
 
-    @OneToMany(mappedBy = "newsArticle", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
-    @Builder.Default
-    private List<AudioFile> audioFiles = new ArrayList<>();
+    @OneToOne(mappedBy = "newsArticle", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
+    private AudioFile audioFile;
 
     @OneToMany(mappedBy = "article", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
     @Builder.Default
     private List<ArticleImage> articleImages = new ArrayList<>();
+
+    @OneToMany(mappedBy = "article", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
+    private List<Comment> comments = new ArrayList<>();
 
     @Column(name = "search_vector", columnDefinition = "tsvector", insertable = false, updatable = false)
     private String searchVector;

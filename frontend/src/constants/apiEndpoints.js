@@ -5,12 +5,14 @@
 
 export const API_ENDPOINTS = {
   // Authentication endpoints
+  // Based on FRONTEND_API_DOCUMENTATION.md
   AUTH: {
     LOGIN: '/auth/login',
     REGISTER: '/auth/register',
     LOGOUT: '/auth/logout',
     REFRESH: '/auth/refresh',
-    PROFILE: '/auth/profile',
+    REVOKE: '/auth/revoke', // Added per documentation
+    PROFILE: '/auth/profile', // Legacy endpoint, use USER.PROFILE instead
     FORGOT_PASSWORD: '/auth/forgot-password',
     RESET_PASSWORD: '/auth/reset-password'
   },
@@ -29,24 +31,30 @@ export const API_ENDPOINTS = {
   USER: {
     FAVORITES: '/favorites',
     FAVORITE_BY_ID: (id) => `/favorites/${id}`,
+    // User profile endpoints (based on FRONTEND_API_DOCUMENTATION.md)
+    PROFILE: '/user/me', // GET /user/me
+    UPDATE_PROFILE: '/user/me', // PUT /user/me
+    UPDATE_PASSWORD: '/user/me/password', // PUT /user/me/password
+    UPLOAD_AVATAR: '/user/me/avatar', // POST /user/me/avatar
+    DELETE_ACCOUNT: '/user/me', // DELETE /user/me
     // Article favorites endpoints
-    ARTICLE_FAVORITES: '/user/me/favorites',
-    ADD_ARTICLE_FAVORITE: (articleId) => `/user/me/favorites/${articleId}`,
-    REMOVE_ARTICLE_FAVORITE: (favoriteId) => `/user/me/favorites/${favoriteId}`,
+    ARTICLE_FAVORITES: '/user/me/favorites', // GET /user/me/favorites
+    ADD_ARTICLE_FAVORITE: (articleId) => `/user/me/favorites/${articleId}`, // POST /user/me/favorites/{articleId}
+    REMOVE_ARTICLE_FAVORITE: (favoriteId) => `/user/me/favorites/${favoriteId}`, // DELETE /user/me/favorites/{favoriteId}
     PLAYLISTS: '/playlists',
     PLAYLIST_BY_ID: (id) => `/playlists/${id}`,
     HISTORY: '/history',
     SUBSCRIPTIONS: '/subscriptions',
-    AUDIO: '/user/audio',
+    // AUDIO endpoint moved to ARTICLES.MY_AUDIO
     // FCM Token Management
     REGISTER_FCM_TOKEN: '/user/me/fcm-tokens',
     REMOVE_FCM_TOKEN: (token) => `/user/me/fcm-tokens/${token}`,
-    // Notification endpoints
-    NOTIFICATIONS: '/user/me/notifications',
-    NOTIFICATION_UNREAD_COUNT: '/user/me/notifications/unread-count',
-    NOTIFICATION_MARK_READ: (id) => `/user/me/notifications/${id}/read`,
-    NOTIFICATION_MARK_ALL_READ: '/user/me/notifications/read-all',
-    NOTIFICATION_DELETE: (id) => `/user/me/notifications/${id}`,
+    // Notification endpoints (based on FRONTEND_API_DOCUMENTATION.md)
+    NOTIFICATIONS: '/user/me/notifications', // GET /user/me/notifications
+    NOTIFICATION_UNREAD_COUNT: '/user/me/notifications/unread-count', // GET /user/me/notifications/unread-count
+    NOTIFICATION_MARK_READ: (id) => `/user/me/notifications/${id}/read`, // PUT /user/me/notifications/{id}/read
+    NOTIFICATION_MARK_ALL_READ: '/user/me/notifications/read-all', // PUT /user/me/notifications/read-all
+    NOTIFICATION_DELETE: (id) => `/user/me/notifications/${id}`, // DELETE /user/me/notifications/{id}
     NOTIFICATION_DELETE_READ: '/user/me/notifications/read'
   },
 
@@ -105,6 +113,7 @@ export const API_ENDPOINTS = {
     GENERATE_AUDIO: (id) => `/articles/${id}/generate-audio`,
     GENERATE_AUDIO_FROM_SUMMARY: (id) => `/articles/${id}/generate-audio-from-summary`,
     GET_AUDIO_FILES: (articleId) => `/articles/${articleId}/audio`,
+    MY_AUDIO: '/articles/my-audio', // Moved from /user/audio
     CHECK_AUDIO_STATUS: (audioFileId) => `/articles/audio/${audioFileId}/check-status`,
     STREAM_AUDIO: (audioFileId) => `/articles/audio/${audioFileId}/stream`,
     DOWNLOAD_AUDIO: (audioFileId) => `/articles/audio/${audioFileId}/download`,

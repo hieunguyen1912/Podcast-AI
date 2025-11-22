@@ -28,7 +28,7 @@ public class AdminUserController {
     private final UserService userService;
 
     @GetMapping
-    @PreAuthorize("hasRole('ADMIN')")
+    @PreAuthorize("hasAuthority('PERMISSION_USER_READ')")
     public ResponseEntity<ApiResponse<PaginatedResponse<UserDto>>> getAllUsers(
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "10") int size,
@@ -50,7 +50,7 @@ public class AdminUserController {
     }
 
     @GetMapping("/{id}")
-    @PreAuthorize("hasRole('ADMIN')")
+    @PreAuthorize("hasAuthority('PERMISSION_USER_READ')")
     public ResponseEntity<ApiResponse<UserDto>> getUserById(@PathVariable Long id) {
         log.info("Admin getting user by ID: {}", id);
         
@@ -60,7 +60,7 @@ public class AdminUserController {
     }
 
     @PutMapping("/{id}")
-    @PreAuthorize("hasRole('ADMIN')")
+    @PreAuthorize("hasAuthority('PERMISSION_USER_UPDATE')")
     public ResponseEntity<ApiResponse<UserDto>> updateUser(
             @PathVariable Long id,
             @Valid @RequestBody AdminUserUpdateRequest request) {
@@ -72,7 +72,7 @@ public class AdminUserController {
     }
 
     @PutMapping("/{id}/status")
-    @PreAuthorize("hasRole('ADMIN')")
+    @PreAuthorize("hasAuthority('PERMISSION_USER_UPDATE')")
     public ResponseEntity<ApiResponse<UserDto>> updateUserStatus(
             @PathVariable Long id,
             @Valid @RequestBody UserStatusUpdateRequest request) {
@@ -84,7 +84,7 @@ public class AdminUserController {
     }
 
     @DeleteMapping("/{id}")
-    @PreAuthorize("hasRole('ADMIN')")
+    @PreAuthorize("hasAuthority('PERMISSION_USER_DELETE')")
     public ResponseEntity<ApiResponse<Void>> deleteUser(@PathVariable Long id) {
         log.info("Admin deleting user with ID: {}", id);
         

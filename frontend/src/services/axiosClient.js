@@ -1,3 +1,14 @@
+/**
+ * Axios Client Configuration
+ * Based on FRONTEND_API_DOCUMENTATION.md
+ * 
+ * Handles:
+ * - JWT Bearer Token authentication
+ * - Response format transformation (extracts data field)
+ * - Error handling with error codes
+ * - Token refresh on 401 errors
+ * - Public endpoints (no auth required)
+ */
 import axios from 'axios';
 import { authService } from '../features/auth/api';
 import { navigationService } from './navigationService';
@@ -55,13 +66,42 @@ apiClient.interceptors.request.use(
 );
 
 // List of public endpoints that don't require authentication
+// Based on FRONTEND_API_DOCUMENTATION.md
 const PUBLIC_ENDPOINTS = [
+  // Auth endpoints (public)
+  '/auth/register',
+  '/auth/login',
+  '/auth/refresh',
+  '/auth/revoke',
+  
+  // News endpoints (all public)
   '/news/search',
   '/news/featured',
   '/news/trending',
   '/news/latest',
   '/news/categories',
-  '/news/category'
+  '/news/category',
+  
+  // Categories (GET only - public)
+  '/categories',
+  '/categories/all',
+  '/categories/tree',
+  '/categories/root',
+  '/categories/slug',
+  
+  // Articles (GET only - published articles)
+  '/articles', // GET /articles/{id} for published articles
+  
+  // Comments (GET only)
+  '/comments/articles',
+  '/comments', // GET /comments/{commentId}/replies
+  
+  // Audio (GET only - public)
+  '/articles', // GET /articles/{articleId}/audio
+  '/articles/audio', // GET /articles/audio/{audioFileId}/stream and /download
+  
+  // Images
+  '/images'
 ];
 
 // Check if an endpoint is public (allows access without auth)
@@ -73,35 +113,114 @@ const isPublicEndpoint = (url) => {
   // Note: axios config.url is relative to baseURL, so it should already be without /api/v1
   const cleanPath = path.replace(/^\/api\/v1/, '') || path;
   
-  // Check if URL matches any public endpoint pattern
-  // Check exact matches or starts with for endpoints like /news/{id}
-  return PUBLIC_ENDPOINTS.some(endpoint => cleanPath === endpoint || cleanPath.startsWith(endpoint + '/')) ||
-         /^\/news\/\d+$/.test(cleanPath) || // /news/{id}
-         /^\/news\/\d+\/related/.test(cleanPath) || // /news/{id}/related
-         /^\/news\/category\/\d+/.test(cleanPath); // /news/category/{id}
+  // Check exact matches
+  if (PUBLIC_ENDPOINTS.some(endpoint => cleanPath === endpoint)) {
+    return true;
+  }
+  
+  // Check pattern matches
+  return (
+    // News endpoints
+    /^\/news\/\d+$/.test(cleanPath) || // /news/{id}
+    /^\/news\/\d+\/related/.test(cleanPath) || // /news/{id}/related
+    /^\/news\/category\/\d+/.test(cleanPath) || // /news/category/{categoryId}
+    
+    // Categories endpoints
+    /^\/categories\/\d+$/.test(cleanPath) || // /categories/{id}
+    /^\/categories\/slug\/.+/.test(cleanPath) || // /categories/slug/{slug}
+    /^\/categories\/\d+\/children/.test(cleanPath) || // /categories/{id}/children
+    /^\/categories\/\d+\/breadcrumb/.test(cleanPath) || // /categories/{id}/breadcrumb
+    
+    // Articles (GET only - published)
+    /^\/articles\/\d+$/.test(cleanPath) || // /articles/{id} - published articles
+    /^\/articles\/\d+\/category/.test(cleanPath) || // /articles/{id}/category
+    
+    // Comments (GET only)
+    /^\/comments\/articles\/\d+$/.test(cleanPath) || // /comments/articles/{articleId}
+    /^\/comments\/\d+\/replies/.test(cleanPath) || // /comments/{commentId}/replies
+    
+    // Audio (GET only - public)
+    /^\/articles\/\d+\/audio$/.test(cleanPath) || // /articles/{articleId}/audio
+    /^\/articles\/audio\/\d+\/stream/.test(cleanPath) || // /articles/audio/{audioFileId}/stream
+    /^\/articles\/audio\/\d+\/download/.test(cleanPath) || // /articles/audio/{audioFileId}/download
+    
+    // Images
+    /^\/images\/.+/.test(cleanPath) // /images/**
+  );
 };
 
+/**
+ * Response interceptor
+ * Handles API response format based on FRONTEND_API_DOCUMENTATION.md
+ * 
+ * Expected response format:
+ * {
+ *   "code": 2000,
+ *   "status": 200,
+ *   "message": "Success message",
+ *   "data": { ... },
+ *   "timestamp": "2024-01-01T00:00:00Z"
+ * }
+ * 
+ * This interceptor extracts the `data` field and returns it directly,
+ * making it easier to use in components.
+ */
 apiClient.interceptors.response.use(
   (response) => {
+    // Check if response follows the documented format: { code, status, message, data, timestamp }
     const backendStatus = response.data?.status;
     
     if (backendStatus !== undefined) {
+      // Success response (status 200-299)
       if (backendStatus >= 200 && backendStatus < 300) {
+        // Extract and return only the data field for easier consumption
         response.data = response.data.data;
         return response;
       } else {
+        // Error response - convert to error format
         const error = new Error(response.data.message || 'Request failed');
         error.response = response;
         error.response.status = backendStatus;
         error.config = response.config;
+        // Preserve error code for error handling
+        error.code = response.data?.code;
         return Promise.reject(error);
       }
     }
 
+    // Response doesn't follow documented format, return as-is
     return response;
   },
   async (error) => {
     const originalRequest = error.config;
+    
+    // Handle 403 Forbidden errors - format error message for better UX
+    const isForbidden = error.response?.status === 403 || 
+                        (error.response?.data?.status === 403);
+    
+    if (isForbidden) {
+      // Format 403 error with user-friendly message
+      const errorData = error.response?.data || {};
+      const errorCode = errorData.code || errorData.error?.code;
+      const errorMessage = errorData.message || errorData.error?.message || 'Bạn không có quyền thực hiện thao tác này';
+      
+      // Create a formatted error with better message
+      const formattedError = new Error(errorMessage);
+      formattedError.response = error.response;
+      formattedError.response.status = 403;
+      formattedError.code = errorCode || 4003; // 4003 is FORBIDDEN error code
+      formattedError.config = error.config;
+      
+      // Log for debugging (optional)
+      console.warn('403 Forbidden:', {
+        url: originalRequest?.url,
+        message: errorMessage,
+        code: errorCode
+      });
+      
+      return Promise.reject(formattedError);
+    }
+    
     const isUnauthorized = error.response?.status === 401 || 
                           (error.response?.data?.status === 401);
     

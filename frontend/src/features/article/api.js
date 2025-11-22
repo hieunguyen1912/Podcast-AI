@@ -148,15 +148,21 @@ class NewsService {
     }
   }
 
+  /**
+   * Get audio file for an article (OneToOne relationship)
+   * @param {number} articleId - Article ID
+   * @returns {Promise<Object|null>} AudioFileDto or null if no audio exists
+   */
   async getArticleAudioFiles(articleId) {
     try {
       const response = await apiClient.get(API_ENDPOINTS.ARTICLES.GET_AUDIO_FILES(articleId));
       // Handle both response.data and response.data.data structure
       const data = response.data?.data || response.data;
-      return Array.isArray(data) ? data : [];
+      // Return object or null (not array anymore - OneToOne relationship)
+      return data || null;
     } catch (error) {
-      console.error(`Error fetching audio files for article ${articleId}:`, error);
-      return [];
+      console.error(`Error fetching audio file for article ${articleId}:`, error);
+      return null;
     }
   }
 
@@ -197,7 +203,17 @@ class NewsService {
       
       // Extract error message from response
       const errorMessage = error.response?.data?.message || error.message || 'Failed to generate audio';
-      const errorCode = error.response?.data?.code || error.response?.status;
+      const errorCode = error.response?.data?.error?.code || error.response?.data?.code || error.response?.status;
+      
+      // Handle specific error code 5008 (AUDIO_ONLY_AUTHOR_CAN_GENERATE)
+      if (errorCode === 5008) {
+        return {
+          success: false,
+          error: 'Only the article author can generate TTS audio',
+          errorCode: 5008,
+          status: error.response?.status || 403
+        };
+      }
       
       return {
         success: false,
@@ -210,7 +226,7 @@ class NewsService {
 
   /**
    * Generate audio from article summary
-   * Available to all users (not just authors)
+   * Only article author can generate TTS
    * @param {number} articleId - Article ID
    * @param {Object} options - Generation options
    * @param {Object} options.customVoiceSettings - Custom voice settings (optional)
@@ -244,7 +260,17 @@ class NewsService {
       
       // Extract error message from response
       const errorMessage = error.response?.data?.message || error.message || 'Failed to generate audio from summary';
-      const errorCode = error.response?.data?.code || error.response?.status;
+      const errorCode = error.response?.data?.error?.code || error.response?.data?.code || error.response?.status;
+      
+      // Handle specific error code 5008 (AUDIO_ONLY_AUTHOR_CAN_GENERATE)
+      if (errorCode === 5008) {
+        return {
+          success: false,
+          error: 'Only the article author can generate TTS audio',
+          errorCode: 5008,
+          status: error.response?.status || 403
+        };
+      }
       
       return {
         success: false,
@@ -320,6 +346,7 @@ class NewsService {
 
   /**
    * Get user's audio files with pagination
+   * Endpoint moved from /user/audio to /articles/my-audio
    * @param {number} page - Page number (0-indexed)
    * @param {number} size - Items per page
    * @param {string} sortBy - Sort field (default: 'createdAt')
@@ -334,7 +361,7 @@ class NewsService {
       params.append('sortBy', sortBy);
       params.append('sortDirection', sortDirection);
 
-      const response = await apiClient.get(`${API_ENDPOINTS.USER.AUDIO}?${params.toString()}`);
+      const response = await apiClient.get(`${API_ENDPOINTS.ARTICLES.MY_AUDIO}?${params.toString()}`);
       // Handle both response.data and response.data.data structure
       const data = response.data?.data || response.data;
       return data || { content: [], page: 0, size: 10, totalElements: 0, totalPages: 0 };
@@ -468,6 +495,22 @@ class NewsService {
    * @returns {Promise<Object>} PaginatedResponse with content array and pagination metadata
    */
   async getArticleFavorites(page = 0, size = 10, sortBy = 'updatedAt', sortDirection = 'desc') {
+    // Check if user is authenticated before making API call
+    if (!authService.isAuthenticated()) {
+      // Return empty result for unauthenticated users
+      return { 
+        content: [], 
+        page: 0, 
+        size: 10, 
+        totalElements: 0, 
+        totalPages: 0,
+        hasNext: false,
+        hasPrevious: false,
+        first: true,
+        last: true
+      };
+    }
+
     try {
       const params = new URLSearchParams();
       params.append('page', page);
@@ -493,6 +536,20 @@ class NewsService {
         last: true
       };
     } catch (error) {
+      // Handle 401 Unauthorized gracefully for unauthenticated users
+      if (error.response?.status === 401) {
+        return { 
+          content: [], 
+          page: 0, 
+          size: 10, 
+          totalElements: 0, 
+          totalPages: 0,
+          hasNext: false,
+          hasPrevious: false,
+          first: true,
+          last: true
+        };
+      }
       console.error('Error fetching article favorites:', error);
       return { 
         content: [], 

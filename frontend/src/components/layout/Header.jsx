@@ -263,6 +263,19 @@ function Header() {
                         Dashboard
                       </Link>
                       
+                      {/* AUTHOR: Author Panel */}
+                      <PermissionGuard requiredRoles={['AUTHOR']}>
+                        <Link
+                          to="/author"
+                          onClick={() => setIsUserMenuOpen(false)}
+                          className="flex items-center px-4 py-3 text-sm text-gray-700 hover:bg-gray-100 transition-colors"
+                        >
+                          <FileText className="h-4 w-4 mr-3" />
+                          Author Panel
+                        </Link>
+                      </PermissionGuard>
+                      
+                      {/* MODERATOR/ADMIN: Moderator Panel */}
                       <PermissionGuard requiredRoles={['MODERATOR', 'ADMIN']}>
                         <Link
                           to="/moderator"
@@ -274,6 +287,7 @@ function Header() {
                         </Link>
                       </PermissionGuard>
                       
+                      {/* ADMIN: Admin Panel */}
                       <PermissionGuard requiredRoles={['ADMIN']}>
                         <Link
                           to="/admin"

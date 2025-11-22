@@ -50,7 +50,7 @@ public class RoleController {
     }
 
     @GetMapping("/all")
-    @PreAuthorize("hasRole('ADMIN')")
+    @PreAuthorize("hasAuthority('PERMISSION_ROLE_READ')")
     public ResponseEntity<ApiResponse<List<RoleDto>>> getAllRolesList() {
         log.info("Getting all roles (without pagination)");
         
@@ -60,7 +60,7 @@ public class RoleController {
     }
 
     @GetMapping("/{id}")
-    @PreAuthorize("hasRole('ADMIN')")
+    @PreAuthorize("hasAuthority('PERMISSION_ROLE_READ')")
     public ResponseEntity<ApiResponse<RoleDto>> getRoleById(@PathVariable Long id) {
         log.info("Getting role by ID: {}", id);
         
@@ -70,7 +70,7 @@ public class RoleController {
     }
 
     @GetMapping("/code/{code}")
-    @PreAuthorize("hasRole('ADMIN')")
+    @PreAuthorize("hasAuthority('PERMISSION_ROLE_READ')")
     public ResponseEntity<ApiResponse<RoleDto>> getRoleByCode(@PathVariable String code) {
         log.info("Getting role by code: {}", code);
         
@@ -80,7 +80,7 @@ public class RoleController {
     }
 
     @PostMapping
-    @PreAuthorize("hasRole('ADMIN')")
+    @PreAuthorize("hasAuthority('PERMISSION_ROLE_CREATE')")
     public ResponseEntity<ApiResponse<RoleDto>> createRole(@Valid @RequestBody RoleRequest request) {
         log.info("Creating role with code: {}", request.getCode());
         
@@ -91,7 +91,7 @@ public class RoleController {
     }
 
     @PutMapping("/{id}")
-    @PreAuthorize("hasRole('ADMIN')")
+    @PreAuthorize("hasAuthority('PERMISSION_ROLE_UPDATE')")
     public ResponseEntity<ApiResponse<RoleDto>> updateRole(
             @PathVariable Long id,
             @Valid @RequestBody RoleUpdateRequest request) {
@@ -103,7 +103,7 @@ public class RoleController {
     }
 
     @DeleteMapping("/{id}")
-    @PreAuthorize("hasRole('ADMIN')")
+    @PreAuthorize("hasAuthority('PERMISSION_ROLE_DELETE')")
     public ResponseEntity<ApiResponse<Void>> deleteRole(@PathVariable Long id) {
         log.info("Deleting (soft delete) role with ID: {}", id);
         
@@ -113,7 +113,7 @@ public class RoleController {
     }
 
     @PutMapping("/{id}/activate")
-    @PreAuthorize("hasRole('ADMIN')")
+    @PreAuthorize("hasAuthority('PERMISSION_ROLE_UPDATE')")
     public ResponseEntity<ApiResponse<RoleDto>> activateRole(@PathVariable Long id) {
         log.info("Activating role with ID: {}", id);
         
@@ -133,6 +133,7 @@ public class RoleController {
     }
 
     @PostMapping("/{roleId}/permissions")
+    @PreAuthorize("hasAuthority('PERMISSION_ROLE_ASSIGN_PERMISSION')")
     public ResponseEntity<ApiResponse<PermissionDto>> assignPermissionToRole(
             @PathVariable Long roleId,
             @Valid @RequestBody RolePermissionAssignmentRequest request) {
@@ -145,6 +146,7 @@ public class RoleController {
     }
 
     @DeleteMapping("/{roleId}/permissions/{permissionId}")
+    @PreAuthorize("hasAuthority('PERMISSION_ROLE_ASSIGN_PERMISSION')")
     public ResponseEntity<ApiResponse<Void>> revokePermissionFromRole(
             @PathVariable Long roleId,
             @PathVariable Long permissionId) {

@@ -39,6 +39,7 @@ public enum ErrorCode {
     // Audio Error Codes
     AUDIO_FILE_PROCESSING_FAILED(5006, "Audio file processing failed", HttpStatus.INTERNAL_SERVER_ERROR),
     AUDIO_FILE_CANNOT_BE_DELETED(5007, "Cannot delete audio file while TTS operation is still running. Please wait for the operation to complete or fail", HttpStatus.BAD_REQUEST),
+    AUDIO_ONLY_AUTHOR_CAN_GENERATE(5008, "Only the article author can generate TTS audio", HttpStatus.FORBIDDEN),
 
 
     //Search error code

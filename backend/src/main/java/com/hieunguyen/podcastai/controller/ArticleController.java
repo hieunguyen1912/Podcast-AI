@@ -25,6 +25,7 @@ import org.springframework.data.domain.Sort;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
@@ -40,6 +41,7 @@ public class ArticleController {
     private final ArticleToAudioService articleToAudioService;
 
     @PostMapping("/generate-summary")
+    @PreAuthorize("hasAuthority('PERMISSION_ARTICLE_SUMMARY')")
     public ResponseEntity<ApiResponse<String>> generateSummary(
             @Valid @RequestBody GenerateSummaryRequest request) {
         log.info("Previewing summary for content length: {}", 
@@ -52,6 +54,7 @@ public class ArticleController {
 
     // Endpoint for JSON (backward compatible)
     @PostMapping(consumes = MediaType.APPLICATION_JSON_VALUE)
+    @PreAuthorize("hasAuthority('PERMISSION_ARTICLE_CREATE')")
     public ResponseEntity<ApiResponse<NewsArticleResponse>> createArticleJson(
             @Valid @RequestBody CreateArticleRequest request) {
         log.info("Creating new article with title: {} (JSON)", request.getTitle());
@@ -64,6 +67,7 @@ public class ArticleController {
 
     // Endpoint for multipart/form-data (with file upload)
     @PostMapping(consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    @PreAuthorize("hasAuthority('PERMISSION_ARTICLE_CREATE')")
     public ResponseEntity<ApiResponse<NewsArticleResponse>> createArticleMultipart(
             @RequestPart(value = "data") @Valid CreateArticleRequest request,
             @RequestPart(value = "featuredImage", required = false) MultipartFile featuredImage,
@@ -77,6 +81,7 @@ public class ArticleController {
     }
 
     @GetMapping("/my-drafts")
+    @PreAuthorize("hasAuthority('PERMISSION_ARTICLE_READ')")
     public ResponseEntity<ApiResponse<PaginatedResponse<NewsArticleSummaryResponse>>> getMyDrafts(
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "10") int size,
@@ -95,6 +100,7 @@ public class ArticleController {
     }
 
     @GetMapping("/my-submitted")
+    @PreAuthorize("hasAuthority('PERMISSION_ARTICLE_READ')")
     public ResponseEntity<ApiResponse<Page<NewsArticleResponse>>> getMySubmitted(
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "10") int size,
@@ -112,6 +118,7 @@ public class ArticleController {
     }
 
     @GetMapping("/my-approved")
+    @PreAuthorize("hasAuthority('PERMISSION_ARTICLE_READ')")
     public ResponseEntity<ApiResponse<Page<NewsArticleResponse>>> getMyApproved(
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "10") int size,
@@ -129,6 +136,7 @@ public class ArticleController {
     }
 
     @GetMapping("/my-rejected")
+    @PreAuthorize("hasAuthority('PERMISSION_ARTICLE_READ')")
     public ResponseEntity<ApiResponse<Page<NewsArticleResponse>>> getMyRejected(
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "10") int size,
@@ -146,6 +154,7 @@ public class ArticleController {
     }
 
     @GetMapping("/my-all")
+    @PreAuthorize("hasAuthority('PERMISSION_ARTICLE_READ')")
     public ResponseEntity<ApiResponse<Page<NewsArticleResponse>>> getMyAllArticles(
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "10") int size,
@@ -163,6 +172,7 @@ public class ArticleController {
     }
 
     @GetMapping("/{id}")
+    @PreAuthorize("hasAuthority('PERMISSION_ARTICLE_READ')")
     public ResponseEntity<ApiResponse<NewsArticleResponse>> getArticleById(@PathVariable Long id) {
         log.info("Getting article with ID: {}", id);
         
@@ -173,6 +183,7 @@ public class ArticleController {
 
     // Endpoint for JSON (backward compatible)
     @PutMapping(value = "/{id}", consumes = MediaType.APPLICATION_JSON_VALUE)
+    @PreAuthorize("hasAuthority('PERMISSION_ARTICLE_UPDATE')")
     public ResponseEntity<ApiResponse<NewsArticleResponse>> updateArticleJson(
             @PathVariable Long id,
             @Valid @RequestBody UpdateArticleRequest request) {
@@ -185,6 +196,7 @@ public class ArticleController {
     
     // Endpoint for multipart/form-data (with file upload)
     @PutMapping(value = "/{id}", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    @PreAuthorize("hasAuthority('PERMISSION_ARTICLE_UPDATE')")
     public ResponseEntity<ApiResponse<NewsArticleResponse>> updateArticleMultipart(
             @PathVariable Long id,
             @RequestPart(value = "data") @Valid UpdateArticleRequest request,
@@ -197,6 +209,7 @@ public class ArticleController {
     }
 
     @DeleteMapping("/{id}")
+    @PreAuthorize("hasAuthority('PERMISSION_ARTICLE_DELETE')")
     public ResponseEntity<ApiResponse<Void>> deleteArticle(@PathVariable Long id) {
         log.info("Deleting article with ID: {}", id);
         
@@ -206,6 +219,7 @@ public class ArticleController {
     }
 
     @PostMapping("/{id}/submit")
+    @PreAuthorize("hasAuthority('PERMISSION_ARTICLE_UPDATE')")
     public ResponseEntity<ApiResponse<NewsArticleResponse>> submitForReview(@PathVariable Long id) {
         log.info("Submitting article with ID: {} for review", id);
         
@@ -236,6 +250,7 @@ public class ArticleController {
 
 
     @PostMapping("/{articleId}/generate-audio")
+    @PreAuthorize("hasAuthority('PERMISSION_ARTICLE_TTS')")
     public ResponseEntity<ApiResponse<AudioFileDto>> generateAudioFromArticle(
             @PathVariable Long articleId,
             @RequestBody(required = false) @Valid AudioRequest request) {
@@ -320,15 +335,21 @@ public class ArticleController {
     }
 
     @GetMapping("/{articleId}/audio")
-    public ResponseEntity<ApiResponse<List<AudioFileDto>>> getAudioByUserAndArticle(
+    public ResponseEntity<ApiResponse<AudioFileDto>> getAudioByUserAndArticle(
             @PathVariable Long articleId
     ) {
-        List<AudioFileDto> response = articleToAudioService.getAudioFiles(articleId);
+        AudioFileDto response = articleToAudioService.getAudioFile(articleId)
+                .orElse(null);
 
-        return ResponseEntity.ok(ApiResponse.success("Audio files retrieved successfully", response));
+        if (response == null) {
+            return ResponseEntity.ok(ApiResponse.success("No audio file found for this article", null));
+        }
+
+        return ResponseEntity.ok(ApiResponse.success("Audio file retrieved successfully", response));
     }
 
     @PostMapping("/{id}/generate-audio-from-summary")
+    @PreAuthorize("hasAuthority('PERMISSION_ARTICLE_TTS')")
     public ResponseEntity<ApiResponse<AudioFileDto>> generateAudioFromSummary(
             @PathVariable Long id,
             @RequestBody(required = false) @Valid AudioRequest request) {
@@ -343,6 +364,25 @@ public class ArticleController {
     
         return ResponseEntity.accepted()
                 .body(ApiResponse.success("Audio generation from summary started. Use check-status endpoint to track progress.", audioFile));
+    }
+
+    @GetMapping("/my-audio")
+    @PreAuthorize("hasAuthority('PERMISSION_ARTICLE_TTS')")
+    public ResponseEntity<ApiResponse<PaginatedResponse<AudioFileDto>>> getMyAudioFiles(
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "10") int size,
+            @RequestParam(defaultValue = "createdAt") String sortBy,
+            @RequestParam(defaultValue = "desc") String sortDirection) {
+        
+        log.info("Getting audio files for current user - page: {}, size: {}", page, size);
+        
+        Sort sort = Sort.by(Sort.Direction.fromString(sortDirection), sortBy);
+        Pageable pageable = PageRequest.of(page, size, sort);
+        
+        Page<AudioFileDto> audioFileDtos = articleToAudioService.getAudioFilesByUser(pageable);
+        PaginatedResponse<AudioFileDto> paginatedResponse = PaginationHelper.toPaginatedResponse(audioFileDtos);
+        
+        return ResponseEntity.ok(ApiResponse.success("Audio files retrieved successfully", paginatedResponse));
     }
 }
 

@@ -55,8 +55,7 @@ public class AudioFile extends AuditableEntity {
     @JoinColumn(name = "tts_config_id", nullable = true)
     private TtsConfig ttsConfig;
 
-    // News relationship
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "news_article_id", nullable = false)
+    @OneToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "news_article_id", nullable = false, unique = true)
     private NewsArticle newsArticle;
 }

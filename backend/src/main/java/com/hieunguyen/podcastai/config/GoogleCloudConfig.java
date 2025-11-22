@@ -22,7 +22,7 @@ import java.nio.file.Paths;
 
 @Configuration
 @Slf4j
-public class GoogleCloudTtsConfig {
+public class GoogleCloudConfig {
 
     @Value("${google.cloud.tts.project-id:}")
     private String projectId;

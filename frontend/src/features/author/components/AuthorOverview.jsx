@@ -1,49 +1,82 @@
 /**
- * Moderator Overview Component
- * Dashboard overview for MODERATOR role
+ * Author Overview Component
+ * Dashboard overview for AUTHOR role
  */
 
 import React from 'react';
 import { 
   FileText, 
+  Clock, 
+  CheckCircle, 
+  XCircle, 
   TrendingUp,
-  Eye
+  Eye,
+  FilePlus
 } from 'lucide-react';
 import { PermissionGuard } from '../../../components/common';
-import { PERMISSIONS } from '../../../constants/permissions';
 
 /**
- * ModeratorOverview component
+ * AuthorOverview component
  * @param {Object} props
  * @param {Object} props.stats - Statistics for articles
  * @param {Function} props.onNavigate - Callback to navigate to different modules
  */
-function ModeratorOverview({ stats = {}, onNavigate }) {
+function AuthorOverview({ stats = {}, onNavigate }) {
   const statCards = [
     {
-      id: 'all',
-      title: 'All Articles',
-      value: stats.all || 0,
+      id: 'drafts',
+      title: 'Drafts',
+      value: stats.drafts || 0,
       icon: FileText,
-      color: 'blue',
-      bgColor: 'bg-blue-50',
-      iconColor: 'text-blue-600',
-      borderColor: 'border-blue-200'
+      color: 'gray',
+      bgColor: 'bg-gray-50',
+      iconColor: 'text-gray-600',
+      borderColor: 'border-gray-200'
+    },
+    {
+      id: 'submitted',
+      title: 'Pending Review',
+      value: stats.submitted || 0,
+      icon: Clock,
+      color: 'yellow',
+      bgColor: 'bg-yellow-50',
+      iconColor: 'text-yellow-600',
+      borderColor: 'border-yellow-200'
+    },
+    {
+      id: 'approved',
+      title: 'Approved',
+      value: stats.approved || 0,
+      icon: CheckCircle,
+      color: 'green',
+      bgColor: 'bg-green-50',
+      iconColor: 'text-green-600',
+      borderColor: 'border-green-200'
+    },
+    {
+      id: 'rejected',
+      title: 'Rejected',
+      value: stats.rejected || 0,
+      icon: XCircle,
+      color: 'red',
+      bgColor: 'bg-red-50',
+      iconColor: 'text-red-600',
+      borderColor: 'border-red-200'
     }
   ];
 
   return (
     <div className="space-y-6">
       {/* Welcome Section */}
-      <div className="bg-gradient-to-r from-orange-500 to-orange-600 rounded-lg p-8 text-white">
-        <h1 className="text-3xl font-bold mb-2">Welcome to Moderator Dashboard</h1>
-        <p className="text-orange-100">
-          Manage your articles, track submissions, and monitor performance.
+      <div className="bg-gradient-to-r from-blue-500 to-blue-600 rounded-lg p-8 text-white">
+        <h1 className="text-3xl font-bold mb-2">Welcome to Author Dashboard</h1>
+        <p className="text-blue-100">
+          Create and manage your articles. Track your submissions and published content.
         </p>
       </div>
 
       {/* Stats Grid */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
         {statCards.map((stat) => {
           const Icon = stat.icon;
           return (
@@ -75,7 +108,7 @@ function ModeratorOverview({ stats = {}, onNavigate }) {
           >
             <button
               onClick={() => onNavigate && onNavigate('create')}
-              className="flex items-center justify-center gap-3 px-6 py-4 bg-orange-500 text-white rounded-lg hover:bg-orange-600 transition-colors"
+              className="flex items-center justify-center gap-3 px-6 py-4 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors"
             >
               <FileText className="h-5 w-5" />
               <span className="font-medium">Create New Article</span>
@@ -87,7 +120,7 @@ function ModeratorOverview({ stats = {}, onNavigate }) {
             className="flex items-center justify-center gap-3 px-6 py-4 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition-colors"
           >
             <Eye className="h-5 w-5" />
-            <span className="font-medium">View All Articles</span>
+            <span className="font-medium">View My Articles</span>
           </button>
         </div>
       </div>
@@ -96,34 +129,20 @@ function ModeratorOverview({ stats = {}, onNavigate }) {
       <div className="bg-white rounded-lg border border-gray-200 p-6">
         <div className="flex items-center justify-between mb-4">
           <h2 className="text-xl font-bold text-gray-900">Performance Insights</h2>
-          <TrendingUp className="h-5 w-5 text-green-500" />
+          <TrendingUp className="h-5 w-5 text-blue-500" />
         </div>
-        
-        <div className="space-y-4">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-sm font-medium text-gray-600">Total Articles</p>
-              <p className="text-2xl font-bold text-gray-900">{stats.all || 0}</p>
-            </div>
-            <div className="text-right">
-              <p className="text-sm font-medium text-gray-600">Total Articles</p>
-              <p className="text-2xl font-bold text-blue-600">
-                {stats.all || 0}
-              </p>
-            </div>
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          <div className="text-center p-4 bg-blue-50 rounded-lg">
+            <p className="text-2xl font-bold text-blue-900">{stats.approved || 0}</p>
+            <p className="text-sm text-gray-600 mt-1">Published Articles</p>
           </div>
-
-          {/* Progress Bar */}
-          <div className="space-y-2">
-            <div className="flex justify-between text-xs text-gray-600">
-              <span>Article Status Distribution</span>
-            </div>
-            <div className="w-full bg-gray-200 rounded-full h-3 overflow-hidden">
-              <div className="bg-blue-500 h-full" style={{ width: '100%' }} />
-            </div>
-            <div className="flex justify-between text-xs">
-              <span className="text-blue-600">📄 All Articles</span>
-            </div>
+          <div className="text-center p-4 bg-yellow-50 rounded-lg">
+            <p className="text-2xl font-bold text-yellow-900">{stats.submitted || 0}</p>
+            <p className="text-sm text-gray-600 mt-1">Under Review</p>
+          </div>
+          <div className="text-center p-4 bg-gray-50 rounded-lg">
+            <p className="text-2xl font-bold text-gray-900">{stats.drafts || 0}</p>
+            <p className="text-sm text-gray-600 mt-1">Draft Articles</p>
           </div>
         </div>
       </div>
@@ -131,5 +150,5 @@ function ModeratorOverview({ stats = {}, onNavigate }) {
   );
 }
 
-export default ModeratorOverview;
+export default AuthorOverview;
 

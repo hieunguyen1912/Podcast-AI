@@ -23,7 +23,7 @@ public class UserRoleController {
     private final UserRoleService userRoleService;
 
     @GetMapping
-    @PreAuthorize("hasRole('ADMIN')")
+    @PreAuthorize("hasAuthority('PERMISSION_USER_READ')")
     public ResponseEntity<ApiResponse<List<RoleDto>>> getUserRoles(@PathVariable Long userId) {
         log.info("Getting roles for user ID: {}", userId);
         
@@ -33,7 +33,7 @@ public class UserRoleController {
     }
 
     @PostMapping
-    @PreAuthorize("hasRole('ADMIN')")
+    @PreAuthorize("hasAuthority('PERMISSION_USER_ASSIGN_ROLE')")
     public ResponseEntity<ApiResponse<RoleDto>> assignRoleToUser(
             @PathVariable Long userId,
             @Valid @RequestBody UserRoleAssignmentRequest request) {
@@ -46,7 +46,7 @@ public class UserRoleController {
     }
 
     @DeleteMapping("/{roleId}")
-    @PreAuthorize("hasRole('ADMIN')")
+    @PreAuthorize("hasAuthority('PERMISSION_USER_ASSIGN_ROLE')")
     public ResponseEntity<ApiResponse<Void>> revokeRoleFromUser(
             @PathVariable Long userId,
             @PathVariable Long roleId) {

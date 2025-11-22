@@ -14,12 +14,16 @@ import {
   Clock,
   CheckCircle,
   XCircle,
-  Trash2
+  Trash2,
+  Volume2
 } from 'lucide-react';
-import { Button, Input, Spinner, Alert, StatusBadge, ConfirmModal } from '../../../components/common';
+import { Button, Input, Spinner, Alert, StatusBadge, ConfirmModal, PermissionGuard, Modal } from '../../../components/common';
+import { PERMISSIONS } from '../../../constants/permissions';
 import articleService from '../api';
 import { formatNewsTime } from '../../../utils/formatTime';
 import ArticleViewModal from './ArticleViewModal';
+import AudioGenerationModal from './AudioGenerationModal';
+import { useAuth } from '../../../context/AuthContext';
 
 /**
  * ArticleListManagement component
@@ -29,6 +33,7 @@ import ArticleViewModal from './ArticleViewModal';
  * @param {Function} props.onView - Callback when view button is clicked
  */
 function ArticleListManagement({ filter = 'all', onEdit, onView }) {
+  const { user } = useAuth();
   const [articles, setArticles] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -36,6 +41,16 @@ function ArticleListManagement({ filter = 'all', onEdit, onView }) {
   const [viewingArticle, setViewingArticle] = useState(null);
   const [isViewModalOpen, setIsViewModalOpen] = useState(false);
   const [deleteConfirmation, setDeleteConfirmation] = useState({ isOpen: false, articleId: null, articleTitle: '' });
+  const [audioGenerationModal, setAudioGenerationModal] = useState({ isOpen: false, articleId: null, articleTitle: '' });
+  const [approveConfirmation, setApproveConfirmation] = useState({ isOpen: false, articleId: null, articleTitle: '' });
+  const [rejectConfirmation, setRejectConfirmation] = useState({ isOpen: false, articleId: null, articleTitle: '', reason: '' });
+  
+  // Check if current user is the author of an article
+  const isArticleAuthor = (article) => {
+    if (!user || !article) return false;
+    const articleAuthorId = article.authorId || (article.author && typeof article.author === 'object' ? article.author.id : null);
+    return articleAuthorId === user.id;
+  };
 
   // Helper function to extract author name from various formats
   // Supports both NewsArticleSummaryResponse (authorName) and NewsArticleResponse (author object)
@@ -202,6 +217,100 @@ function ArticleListManagement({ filter = 'all', onEdit, onView }) {
 
   const handleDeleteCancel = () => {
     setDeleteConfirmation({ isOpen: false, articleId: null, articleTitle: '' });
+  };
+
+  const handleGenerateAudioClick = (articleId, articleTitle) => {
+    setAudioGenerationModal({
+      isOpen: true,
+      articleId,
+      articleTitle
+    });
+  };
+
+  const handleAudioGenerationSuccess = () => {
+    // Optionally reload articles or show success message
+    // loadArticles();
+  };
+
+  const handleAudioGenerationClose = () => {
+    setAudioGenerationModal({ isOpen: false, articleId: null, articleTitle: '' });
+  };
+
+  const handleApproveClick = (articleId, articleTitle) => {
+    setApproveConfirmation({
+      isOpen: true,
+      articleId,
+      articleTitle
+    });
+  };
+
+  const handleApproveConfirm = async () => {
+    if (!approveConfirmation.articleId) return;
+    
+    try {
+      const result = await articleService.approveArticle(approveConfirmation.articleId);
+      
+      if (result.success) {
+        await loadArticles();
+        setApproveConfirmation({ isOpen: false, articleId: null, articleTitle: '' });
+        // Show success message
+        alert('Article approved successfully');
+      } else {
+        alert(result.error || 'Failed to approve article');
+      }
+    } catch (err) {
+      console.error('Error approving article:', err);
+      alert('An unexpected error occurred');
+    }
+  };
+
+  const handleApproveCancel = () => {
+    setApproveConfirmation({ isOpen: false, articleId: null, articleTitle: '' });
+  };
+
+  const handleRejectClick = (articleId, articleTitle) => {
+    setRejectConfirmation({
+      isOpen: true,
+      articleId,
+      articleTitle,
+      reason: ''
+    });
+  };
+
+  const handleRejectConfirm = async () => {
+    if (!rejectConfirmation.articleId) return;
+    
+    // Validate rejection reason
+    const reason = rejectConfirmation.reason?.trim() || '';
+    if (!reason || reason.length < 10) {
+      alert('Rejection reason must be at least 10 characters');
+      return;
+    }
+    
+    if (reason.length > 1000) {
+      alert('Rejection reason must not exceed 1000 characters');
+      return;
+    }
+    
+    try {
+      const result = await articleService.rejectArticle(rejectConfirmation.articleId, reason);
+      
+      if (result.success) {
+        await loadArticles();
+        setRejectConfirmation({ isOpen: false, articleId: null, articleTitle: '', reason: '' });
+        // Show success message
+        alert('Article rejected successfully');
+      } else {
+        alert(result.error || 'Failed to reject article');
+      }
+    } catch (err) {
+      console.error('Error rejecting article:', err);
+      alert('An unexpected error occurred');
+    }
+  };
+
+  const handleRejectCancel = () => {
+    setRejectConfirmation({ isOpen: false, articleId: null, articleTitle: '', reason: '' });
   };
 
   const getStatusBadge = (status) => {
@@ -397,35 +506,97 @@ function ArticleListManagement({ filter = 'all', onEdit, onView }) {
                           <Eye className="h-4 w-4" />
                         </button>
                         
-                        {onEdit && (article.status === 'DRAFT' || article.status === 'REJECTED') && (
-                          <button
-                            onClick={() => onEdit(article)}
-                            className="p-2 text-blue-600 hover:text-blue-900 hover:bg-blue-50 rounded-lg transition-colors"
-                            title="Edit article"
-                          >
-                            <Edit className="h-4 w-4" />
-                          </button>
-                        )}
+                        {/* Edit button - requires ARTICLE_UPDATE permission */}
+                        <PermissionGuard 
+                          requiredPermissions={[PERMISSIONS.ARTICLE_UPDATE]}
+                          fallback={null}
+                        >
+                          {onEdit && (article.status === 'DRAFT' || article.status === 'REJECTED') && (
+                            <button
+                              onClick={() => onEdit(article)}
+                              className="p-2 text-blue-600 hover:text-blue-900 hover:bg-blue-50 rounded-lg transition-colors"
+                              title="Edit article"
+                            >
+                              <Edit className="h-4 w-4" />
+                            </button>
+                          )}
+                        </PermissionGuard>
                         
-                        {article.status === 'DRAFT' && (
-                          <button
-                            onClick={() => handleSubmit(article.id)}
-                            className="p-2 text-orange-600 hover:text-orange-900 hover:bg-orange-50 rounded-lg transition-colors"
-                            title="Submit for review"
-                          >
-                            <Send className="h-4 w-4" />
-                          </button>
-                        )}
+                        {/* Generate Audio button - only for approved articles and only if user is the author */}
+                        {/* AUTHOR has ARTICLE_TTS permission, MODERATOR does not */}
+                        <PermissionGuard 
+                          requiredPermissions={[PERMISSIONS.ARTICLE_TTS]}
+                          fallback={null}
+                        >
+                          {article.status === 'APPROVED' && isArticleAuthor(article) && (
+                            <button
+                              onClick={() => handleGenerateAudioClick(article.id, article.title)}
+                              className="p-2 text-orange-600 hover:text-orange-900 hover:bg-orange-50 rounded-lg transition-colors"
+                              title="Generate audio (Author only)"
+                            >
+                              <Volume2 className="h-4 w-4" />
+                            </button>
+                          )}
+                        </PermissionGuard>
                         
-                        {article.status === 'DRAFT' && (
-                          <button
-                            onClick={() => handleDeleteClick(article.id, article.title)}
-                            className="p-2 text-red-600 hover:text-red-900 hover:bg-red-50 rounded-lg transition-colors"
-                            title="Delete article"
-                          >
-                            <Trash2 className="h-4 w-4" />
-                          </button>
-                        )}
+                        {/* Submit button - only for AUTHOR (who creates articles) */}
+                        {/* MODERATOR doesn't create articles, so they don't need submit */}
+                        <PermissionGuard 
+                          requiredPermissions={[PERMISSIONS.ARTICLE_CREATE]}
+                          fallback={null}
+                        >
+                          {article.status === 'DRAFT' && (
+                            <button
+                              onClick={() => handleSubmit(article.id)}
+                              className="p-2 text-orange-600 hover:text-orange-900 hover:bg-orange-50 rounded-lg transition-colors"
+                              title="Submit for review"
+                            >
+                              <Send className="h-4 w-4" />
+                            </button>
+                          )}
+                        </PermissionGuard>
+                        
+                        {/* Approve/Reject buttons - requires ARTICLE_APPROVE permission (MODERATOR/ADMIN) */}
+                        <PermissionGuard 
+                          requiredPermissions={[PERMISSIONS.ARTICLE_APPROVE]}
+                          fallback={null}
+                        >
+                          {(article.status === 'PENDING_REVIEW' || article.status === 'SUBMITTED') && (
+                            <>
+                              <button
+                                onClick={() => handleApproveClick(article.id, article.title)}
+                                className="p-2 text-green-600 hover:text-green-900 hover:bg-green-50 rounded-lg transition-colors"
+                                title="Approve article"
+                              >
+                                <CheckCircle className="h-4 w-4" />
+                              </button>
+                              
+                              <button
+                                onClick={() => handleRejectClick(article.id, article.title)}
+                                className="p-2 text-red-600 hover:text-red-900 hover:bg-red-50 rounded-lg transition-colors"
+                                title="Reject article"
+                              >
+                                <XCircle className="h-4 w-4" />
+                              </button>
+                            </>
+                          )}
+                        </PermissionGuard>
+                        
+                        {/* Delete button - requires ARTICLE_DELETE permission */}
+                        <PermissionGuard 
+                          requiredPermissions={[PERMISSIONS.ARTICLE_DELETE]}
+                          fallback={null}
+                        >
+                          {article.status === 'DRAFT' && (
+                            <button
+                              onClick={() => handleDeleteClick(article.id, article.title)}
+                              className="p-2 text-red-600 hover:text-red-900 hover:bg-red-50 rounded-lg transition-colors"
+                              title="Delete article"
+                            >
+                              <Trash2 className="h-4 w-4" />
+                            </button>
+                          )}
+                        </PermissionGuard>
                       </div>
                     </td>
                   </tr>
@@ -472,6 +643,177 @@ function ArticleListManagement({ filter = 'all', onEdit, onView }) {
         confirmText="Delete"
         cancelText="Cancel"
         variant="danger"
+      />
+
+      {/* Approve Confirmation Modal */}
+      <ConfirmModal
+        isOpen={approveConfirmation.isOpen}
+        onClose={handleApproveCancel}
+        onConfirm={handleApproveConfirm}
+        title="Approve Article"
+        message={
+          <div className="space-y-2">
+            <p className="text-gray-700">
+              Are you sure you want to approve <strong>"{approveConfirmation.articleTitle}"</strong>?
+            </p>
+            <p className="text-sm text-gray-600">
+              The article will be published and visible to all users.
+            </p>
+          </div>
+        }
+        confirmText="Approve"
+        cancelText="Cancel"
+        variant="success"
+      />
+
+      {/* Reject Confirmation Modal */}
+      {rejectConfirmation.isOpen && (
+        <Modal
+          isOpen={rejectConfirmation.isOpen}
+          onClose={handleRejectCancel}
+          title="Reject Article"
+          size="md"
+          footer={
+            <>
+              <button
+                onClick={handleRejectCancel}
+                className="px-4 py-2 text-gray-700 bg-gray-100 hover:bg-gray-200 rounded-lg transition-colors"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleRejectConfirm}
+                disabled={!rejectConfirmation.reason || rejectConfirmation.reason.trim().length < 10 || rejectConfirmation.reason.trim().length > 1000}
+                className="px-4 py-2 bg-red-500 text-white hover:bg-red-600 rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                Reject Article
+              </button>
+            </>
+          }
+        >
+          <div className="space-y-4">
+            <p className="text-gray-700">
+              Are you sure you want to reject <strong>"{rejectConfirmation.articleTitle}"</strong>?
+            </p>
+            
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Rejection Reason <span className="text-red-500">*</span>
+              </label>
+              <textarea
+                value={rejectConfirmation.reason}
+                onChange={(e) => setRejectConfirmation({ ...rejectConfirmation, reason: e.target.value })}
+                placeholder="Enter reason for rejection (minimum 10 characters)..."
+                rows={4}
+                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-red-500"
+                minLength={10}
+                maxLength={1000}
+              />
+              <div className="mt-1 text-sm text-gray-500">
+                {rejectConfirmation.reason && rejectConfirmation.reason.trim().length > 0 && 
+                 rejectConfirmation.reason.trim().length < 10 
+                  ? `Minimum 10 characters required (${rejectConfirmation.reason.trim().length}/10)`
+                  : `${rejectConfirmation.reason?.length || 0}/1000 characters`}
+              </div>
+              {rejectConfirmation.reason && rejectConfirmation.reason.trim().length > 0 && 
+               rejectConfirmation.reason.trim().length < 10 && (
+                <p className="mt-1 text-sm text-red-600">
+                  Rejection reason must be at least 10 characters
+                </p>
+              )}
+            </div>
+          </div>
+        </Modal>
+      )}
+
+      {/* Approve Confirmation Modal */}
+      <ConfirmModal
+        isOpen={approveConfirmation.isOpen}
+        onClose={handleApproveCancel}
+        onConfirm={handleApproveConfirm}
+        title="Approve Article"
+        message={
+          <div className="space-y-2">
+            <p className="text-gray-700">
+              Are you sure you want to approve <strong>"{approveConfirmation.articleTitle}"</strong>?
+            </p>
+            <p className="text-sm text-gray-600">
+              The article will be published and visible to all users.
+            </p>
+          </div>
+        }
+        confirmText="Approve"
+        cancelText="Cancel"
+        variant="success"
+      />
+
+      {/* Reject Confirmation Modal */}
+      {rejectConfirmation.isOpen && (
+        <Modal
+          isOpen={rejectConfirmation.isOpen}
+          onClose={handleRejectCancel}
+          title="Reject Article"
+          size="md"
+          footer={
+            <>
+              <button
+                onClick={handleRejectCancel}
+                className="px-4 py-2 text-gray-700 bg-gray-100 hover:bg-gray-200 rounded-lg transition-colors"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleRejectConfirm}
+                disabled={!rejectConfirmation.reason || rejectConfirmation.reason.trim().length < 10 || rejectConfirmation.reason.trim().length > 1000}
+                className="px-4 py-2 bg-red-500 text-white hover:bg-red-600 rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                Reject Article
+              </button>
+            </>
+          }
+        >
+          <div className="space-y-4">
+            <p className="text-gray-700">
+              Are you sure you want to reject <strong>"{rejectConfirmation.articleTitle}"</strong>?
+            </p>
+            
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Rejection Reason <span className="text-red-500">*</span>
+              </label>
+              <textarea
+                value={rejectConfirmation.reason}
+                onChange={(e) => setRejectConfirmation({ ...rejectConfirmation, reason: e.target.value })}
+                placeholder="Enter reason for rejection (minimum 10 characters)..."
+                rows={4}
+                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-red-500"
+                minLength={10}
+                maxLength={1000}
+              />
+              <div className="mt-1 text-sm text-gray-500">
+                {rejectConfirmation.reason && rejectConfirmation.reason.trim().length > 0 && 
+                 rejectConfirmation.reason.trim().length < 10 
+                  ? `Minimum 10 characters required (${rejectConfirmation.reason.trim().length}/10)`
+                  : `${rejectConfirmation.reason?.length || 0}/1000 characters`}
+              </div>
+              {rejectConfirmation.reason && rejectConfirmation.reason.trim().length > 0 && 
+               rejectConfirmation.reason.trim().length < 10 && (
+                <p className="mt-1 text-sm text-red-600">
+                  Rejection reason must be at least 10 characters
+                </p>
+              )}
+            </div>
+          </div>
+        </Modal>
+      )}
+
+      {/* Audio Generation Modal */}
+      <AudioGenerationModal
+        isOpen={audioGenerationModal.isOpen}
+        onClose={handleAudioGenerationClose}
+        articleId={audioGenerationModal.articleId}
+        articleTitle={audioGenerationModal.articleTitle}
+        onSuccess={handleAudioGenerationSuccess}
       />
     </div>
   );

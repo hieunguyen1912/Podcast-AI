@@ -20,6 +20,7 @@ import com.hieunguyen.podcastai.repository.NewsArticleRepository;
 import com.hieunguyen.podcastai.repository.TtsConfigRepository;
 import com.hieunguyen.podcastai.repository.UserRepository;
 import com.google.cloud.storage.Blob;
+import com.google.cloud.storage.BlobId;
 import com.google.cloud.storage.Storage;
 import com.hieunguyen.podcastai.service.ArticleToAudioService;
 import com.hieunguyen.podcastai.service.GoogleTtsService;
@@ -35,7 +36,7 @@ import org.springframework.transaction.annotation.Transactional;
 import java.io.InputStream;
 import java.nio.channels.Channels;
 import java.time.Instant;
-import java.util.List;
+import java.util.Optional;
 
 @Service
 @Slf4j
@@ -60,23 +61,26 @@ public class ArticleToAudioServiceImpl implements ArticleToAudioService {
         log.info("Generating audio for article: {} with config: {}", articleId, 
                 request.getCustomVoiceSettings() != null ? "custom" : "default");
 
-        // 1. Get current user
         User currentUser = securityUtils.getCurrentUser();
         log.info("current user: {}", currentUser.getDefaultTtsConfig());
 
-        // 2. Find and validate article
         NewsArticle article = articleRepository.findById(articleId)
                 .orElseThrow(() -> new AppException(ErrorCode.ARTICLE_NOT_FOUND));
 
+        // Check if current user is the author
+        if (!article.getAuthor().getId().equals(currentUser.getId())) {
+            throw new AppException(ErrorCode.AUDIO_ONLY_AUTHOR_CAN_GENERATE);
+        }
+
+        // Delete existing audio file if any (only one TTS per article)
+        deleteExistingAudioFile(article);
+
         VoiceSettingsRequest voiceSettings = resolveVoiceSettings(request, currentUser);
         
-        // 4. Convert article to SSML
         String ssmlContent = articleToSsmlConverter.convertToSsml(article.getContent(), article.getTitle());
         
-        // 5. Generate file name (use same name for both GCS and database)
         String fileName = generateAudioFileName(article, voiceSettings, false);
         
-        // 6. Generate audio using Google TTS Long Audio Synthesis
         LongAudioSynthesisRequest longAudioSynthesisRequest = LongAudioSynthesisRequest.builder()
                 .text(ssmlContent)
                 .voiceSettings(voiceSettings)
@@ -85,7 +89,6 @@ public class ArticleToAudioServiceImpl implements ArticleToAudioService {
         
         LongAudioSynthesisResponse synthesisResponse = googleTtsService.synthesizeLongAudio(longAudioSynthesisRequest);
         
-        // 7. Create AudioFile entity with operation info
         AudioFile audioFile = AudioFile.builder()
                 .newsArticle(article)
                 .user(currentUser)
@@ -96,7 +99,6 @@ public class ArticleToAudioServiceImpl implements ArticleToAudioService {
                 .ttsConfig(getTtsConfigFromRequest(request, currentUser))
                 .build();
         
-        // Save to database
         AudioFile savedAudioFile = audioRepository.save(audioFile);
         
         log.info("Long audio synthesis started for article: {}, operation: {}, audio file ID: {}", 
@@ -117,9 +119,17 @@ public class ArticleToAudioServiceImpl implements ArticleToAudioService {
         NewsArticle article = articleRepository.findById(articleId)
                 .orElseThrow(() -> new AppException(ErrorCode.ARTICLE_NOT_FOUND));
 
+        // Check if current user is the author
+        if (!article.getAuthor().getId().equals(currentUser.getId())) {
+            throw new AppException(ErrorCode.AUDIO_ONLY_AUTHOR_CAN_GENERATE);
+        }
+
         if (article.getSummary() == null || article.getSummary().trim().isEmpty()) {
             throw new AppException(ErrorCode.SUMMARY_NOT_AVAILABLE);
         }
+
+        // Delete existing audio file if any (only one TTS per article)
+        deleteExistingAudioFile(article);
 
         VoiceSettingsRequest voiceSettings = resolveVoiceSettings(request, currentUser);
         
@@ -440,7 +450,13 @@ public class ArticleToAudioServiceImpl implements ArticleToAudioService {
                 String[] parts = parseGcsUri(audioFile.getGcsUri());
                 String bucketName = parts[0];
                 String objectName = parts[1];
-                storage.delete(bucketName, objectName);
+                BlobId blobId = BlobId.of(bucketName, objectName);
+                boolean deleted = storage.delete(blobId);
+                if (deleted) {
+                    log.info("Deleted audio file from GCS: {}", audioFile.getGcsUri());
+                } else {
+                    log.warn("File not found in GCS: {}", audioFile.getGcsUri());
+                }
             } catch (Exception e) {
                 log.warn("Failed to delete file from GCS {}: {}. Continuing with database deletion.", 
                         audioFile.getGcsUri(), e.getMessage());
@@ -452,15 +468,12 @@ public class ArticleToAudioServiceImpl implements ArticleToAudioService {
     }
 
     @Override
-    public List<AudioFileDto> getAudioFiles(Long articleId) {
+    public Optional<AudioFileDto> getAudioFile(Long articleId) {
         NewsArticle newsArticle = newsArticleRepository.findById(articleId)
                 .orElseThrow(() -> new AppException(ErrorCode.ARTICLE_NOT_FOUND));
 
-        User currentUser = securityUtils.getCurrentUser();
-
-        List<AudioFile> audioFiles = audioRepository.findByUserAndNewsArticle(currentUser, newsArticle);
-
-        return audioMapper.toDtoList(audioFiles);
+        return audioRepository.findByNewsArticle(newsArticle)
+                .map(audioMapper::toDto);
     }
 
     @Override
@@ -470,14 +483,57 @@ public class ArticleToAudioServiceImpl implements ArticleToAudioService {
         return audioFiles.map(audioMapper::toDto);
     }
 
-    /**
-     * Generate file name for audio file
-     * 
-     * @param article The article
-     * @param voiceSettings Voice settings
-     * @param isFromSummary Whether the audio is generated from summary (true) or full article (false)
-     * @return Generated file name
-     */
+    private void deleteExistingAudioFile(NewsArticle article) {
+        Optional<AudioFile> existingAudioOpt = audioRepository.findByNewsArticle(article);
+        
+        if (existingAudioOpt.isPresent()) {
+            AudioFile existingAudio = existingAudioOpt.get();
+            log.info("Found existing audio file for article {}. Deleting it...", article.getId());
+            
+            // Check if operation is still running - cannot delete if TTS is still processing
+            if (existingAudio.getOperationName() != null && !existingAudio.getOperationName().isEmpty()) {
+                try {
+                    LongAudioSynthesisResponse statusResponse = googleTtsService.checkLongAudioOperationStatus(
+                            existingAudio.getOperationName());
+                    
+                    if (!Boolean.TRUE.equals(statusResponse.getDone())) {
+                        log.warn("Cannot delete audio file {} because TTS operation is still running. Cancelling operation...", 
+                                existingAudio.getId());
+                        // Continue to delete anyway since we're replacing it
+                    }
+                } catch (Exception e) {
+                    if (existingAudio.getStatus() == ProcessingStatus.GENERATING_AUDIO) {
+                        log.warn("Cannot delete audio file {} because TTS operation is still running. Continuing anyway...", 
+                                existingAudio.getId());
+                    }
+                }
+            }
+            
+            // Delete from GCS if exists
+            if (existingAudio.getGcsUri() != null && !existingAudio.getGcsUri().isEmpty()) {
+                try {
+                    String[] parts = parseGcsUri(existingAudio.getGcsUri());
+                    String bucketName = parts[0];
+                    String objectName = parts[1];
+                    BlobId blobId = BlobId.of(bucketName, objectName);
+                    boolean deleted = storage.delete(blobId);
+                    if (deleted) {
+                        log.info("Deleted audio file from GCS: {}", existingAudio.getGcsUri());
+                    } else {
+                        log.warn("File not found in GCS: {}", existingAudio.getGcsUri());
+                    }
+                } catch (Exception e) {
+                    log.warn("Failed to delete file from GCS {}: {}. Continuing with database deletion.", 
+                            existingAudio.getGcsUri(), e.getMessage());
+                }
+            }
+            
+            // Delete from database
+            audioRepository.delete(existingAudio);
+            log.info("Deleted existing audio file ID: {}", existingAudio.getId());
+        }
+    }
+
     private String generateAudioFileName(NewsArticle article, VoiceSettingsRequest voiceSettings, boolean isFromSummary) {
         String timestamp = String.valueOf(Instant.now().toEpochMilli());
         String sanitizedTitle = article.getTitle()

@@ -1,6 +1,6 @@
 /**
- * Moderator Page
- * Main page for MODERATOR role to manage articles
+ * Author Page
+ * Main page for AUTHOR role to manage articles
  */
 
 import React, { useState, useEffect } from 'react';
@@ -9,36 +9,36 @@ import { useNavigate } from 'react-router-dom';
 import { useRole } from '../../../hooks/useRole';
 import { FilePlus } from 'lucide-react';
 import { PermissionGuard } from '../../../components/common';
-import { PERMISSIONS } from '../../../constants/permissions';
-import ModeratorSidebar from '../components/ModeratorSidebar';
-import ModeratorOverview from '../components/ModeratorOverview';
-import ArticleEditor from '../components/ArticleEditor';
-import ArticleListManagement from '../components/ArticleListManagement';
-import ModeratorArticlesManagement from '../components/ModeratorArticlesManagement';
-import CategoryManagement from '../../admin/components/CategoryManagement';
-import articleService from '../api';
-import adminService from '../../admin/api';
+import AuthorSidebar from '../components/AuthorSidebar';
+import AuthorOverview from '../components/AuthorOverview';
+import ArticleEditor from '../../moderator/components/ArticleEditor';
+import ArticleListManagement from '../../moderator/components/ArticleListManagement';
+import articleService from '../../moderator/api';
 
-function ModeratorPage() {
+function AuthorPage() {
   const { user, isAuthenticated } = useAuth();
   const navigate = useNavigate();
-  const { hasRole } = useRole(['MODERATOR', 'ADMIN']);
+  const { hasRole } = useRole(['AUTHOR']);
   
   const [activeModule, setActiveModule] = useState('overview');
   const [stats, setStats] = useState({
-    all: 0
+    all: 0,
+    drafts: 0,
+    submitted: 0,
+    approved: 0,
+    rejected: 0
   });
   const [selectedArticle, setSelectedArticle] = useState(null);
   const [loading, setLoading] = useState(true);
 
-  // Check if user has MODERATOR or ADMIN role
+  // Check if user has AUTHOR role
   useEffect(() => {
     if (!isAuthenticated) {
       navigate('/login');
       return;
     }
 
-    // Kiểm tra quyền MODERATOR hoặc ADMIN - nếu không có quyền sẽ bị RoleProtectedRoute redirect
+    // Kiểm tra quyền AUTHOR - nếu không có quyền sẽ bị RoleProtectedRoute redirect
     if (!hasRole) {
       navigate('/');
       return;
@@ -82,13 +82,23 @@ function ModeratorPage() {
     setLoading(true);
     
     try {
-      // Load all article lists to calculate stats (using admin endpoints to get ALL articles in system)
+      // Load all article lists to calculate stats (only author's articles)
       // Use size: 1 to minimize data transfer since we only need totalElements
-      const allResult = await adminService.getAllArticles({ page: 0, size: 1 });
+      const [allResult, draftsResult, submittedResult, approvedResult, rejectedResult] = await Promise.all([
+        articleService.getMyAll({ page: 0, size: 1 }),
+        articleService.getMyDrafts({ page: 0, size: 1 }),
+        articleService.getMySubmitted({ page: 0, size: 1 }),
+        articleService.getMyApproved({ page: 0, size: 1 }),
+        articleService.getMyRejected({ page: 0, size: 1 })
+      ]);
 
       setStats({
-        all: getTotalCount(allResult)
-      }); 
+        all: getTotalCount(allResult),
+        drafts: getTotalCount(draftsResult),
+        submitted: getTotalCount(submittedResult),
+        approved: getTotalCount(approvedResult),
+        rejected: getTotalCount(rejectedResult)
+      });
     } catch (error) {
       console.error('Error loading stats:', error);
     } finally {
@@ -128,71 +138,37 @@ function ModeratorPage() {
     switch (activeModule) {
       case 'overview':
         return (
-          <ModeratorOverview 
+          <AuthorOverview 
             stats={stats}
             onNavigate={handleModuleChange}
           />
         );
       
       case 'create':
-        // Only allow create if user has ARTICLE_CREATE permission (ADMIN only, MODERATOR doesn't have this)
         return (
-          <PermissionGuard 
-            requiredPermissions={[PERMISSIONS.ARTICLE_CREATE]}
-            fallback={
-              <div className="bg-white rounded-lg border border-gray-200 p-8 text-center">
-                <h2 className="text-2xl font-bold text-gray-900 mb-4">Access Denied</h2>
-                <p className="text-gray-600 mb-6">You don't have permission to create articles.</p>
-                <button
-                  onClick={() => handleModuleChange('overview')}
-                  className="bg-orange-500 hover:bg-orange-600 text-white px-6 py-3 rounded-lg font-medium transition-colors"
-                >
-                  Back to Overview
-                </button>
-              </div>
-            }
-          >
-            <ArticleEditor
-              article={selectedArticle}
-              onSave={handleArticleSaved}
-              onCancel={handleCancelEdit}
-            />
-          </PermissionGuard>
-        );
-      
-      case 'all':
-        // Use full management UI for better article management (like Admin)
-        return (
-          <ModeratorArticlesManagement
-            onStatsChange={loadStats}
+          <ArticleEditor
+            article={selectedArticle}
+            onSave={handleArticleSaved}
+            onCancel={handleCancelEdit}
           />
         );
       
-      case 'categories':
-        // Category management - MODERATOR has CATEGORY_CREATE, CATEGORY_UPDATE, CATEGORY_DELETE permissions
+      case 'all':
+      case 'drafts':
+      case 'submitted':
+      case 'approved':
+      case 'rejected':
         return (
-          <PermissionGuard 
-            requiredPermissions={[PERMISSIONS.CATEGORY_CREATE]}
-            fallback={
-              <div className="bg-white rounded-lg border border-gray-200 p-8 text-center">
-                <h2 className="text-2xl font-bold text-gray-900 mb-4">Access Denied</h2>
-                <p className="text-gray-600 mb-6">You don't have permission to manage categories.</p>
-                <button
-                  onClick={() => handleModuleChange('overview')}
-                  className="bg-orange-500 hover:bg-orange-600 text-white px-6 py-3 rounded-lg font-medium transition-colors"
-                >
-                  Back to Overview
-                </button>
-              </div>
-            }
-          >
-            <CategoryManagement onStatsChange={loadStats} />
-          </PermissionGuard>
+          <ArticleListManagement
+            filter={activeModule}
+            onEdit={handleEditArticle}
+            onView={handleViewArticle}
+          />
         );
       
       default:
         return (
-          <ModeratorOverview 
+          <AuthorOverview 
             stats={stats}
             onNavigate={handleModuleChange}
           />
@@ -204,11 +180,14 @@ function ModeratorPage() {
     const titles = {
       overview: 'Overview',
       create: selectedArticle ? 'Edit Article' : 'Create New Article',
-      all: 'All Articles',
-      categories: 'Category Management'
+      all: 'My Articles',
+      drafts: 'Draft Articles',
+      submitted: 'Submitted Articles',
+      approved: 'Approved Articles',
+      rejected: 'Rejected Articles'
     };
     
-    return titles[activeModule] || 'Moderator Dashboard';
+    return titles[activeModule] || 'Author Dashboard';
   };
 
   if (!isAuthenticated) {
@@ -217,10 +196,10 @@ function ModeratorPage() {
         <div className="flex items-center justify-center min-h-[60vh]">
           <div className="text-center px-4">
             <h2 className="text-3xl font-bold text-gray-900 mb-4">Access Denied</h2>
-            <p className="text-gray-600 mb-6">Please login to access the moderator dashboard.</p>
+            <p className="text-gray-600 mb-6">Please login to access the author dashboard.</p>
             <button 
               onClick={() => navigate('/login')} 
-              className="bg-orange-500 hover:bg-orange-600 text-white px-6 py-3 rounded-lg font-medium transition-colors"
+              className="bg-blue-500 hover:bg-blue-600 text-white px-6 py-3 rounded-lg font-medium transition-colors"
             >
               Login
             </button>
@@ -234,7 +213,7 @@ function ModeratorPage() {
     <div className="min-h-screen bg-gray-50 pt-20">
       <div className="flex max-w-full mx-auto min-h-[calc(100vh-5rem)]">
         {/* Sidebar Navigation */}
-        <ModeratorSidebar 
+        <AuthorSidebar 
           activeModule={activeModule}
           onModuleChange={handleModuleChange}
           stats={stats}
@@ -255,7 +234,7 @@ function ModeratorPage() {
                 >
                   <button
                     onClick={() => handleModuleChange('create')}
-                    className="flex items-center gap-2 bg-orange-500 hover:bg-orange-600 text-white px-4 lg:px-6 py-2 lg:py-3 rounded-lg font-medium transition-colors"
+                    className="flex items-center gap-2 bg-blue-500 hover:bg-blue-600 text-white px-4 lg:px-6 py-2 lg:py-3 rounded-lg font-medium transition-colors"
                   >
                     <FilePlus className="h-5 w-5" />
                     <span className="hidden sm:inline">Create New Article</span>
@@ -269,7 +248,7 @@ function ModeratorPage() {
           <div className="animate-fade-in">
             {loading && activeModule === 'overview' ? (
               <div className="flex items-center justify-center py-12">
-                <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-orange-500"></div>
+                <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-500"></div>
               </div>
             ) : (
               renderContent()
@@ -281,5 +260,5 @@ function ModeratorPage() {
   );
 }
 
-export default ModeratorPage;
+export default AuthorPage;
 

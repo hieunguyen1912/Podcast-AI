@@ -30,26 +30,13 @@ public class AsyncConfig {
     @Bean(name = "ttsTaskExecutor")
     public Executor ttsTaskExecutor() {
         ThreadPoolTaskExecutor executor = new ThreadPoolTaskExecutor();
-        
-        // Số thread tối thiểu luôn chạy
         executor.setCorePoolSize(corePoolSize);
-        
-        // Số thread tối đa có thể tạo
         executor.setMaxPoolSize(maxPoolSize);
-        
-        // Số lượng task có thể chờ trong queue
         executor.setQueueCapacity(queueCapacity);
-        
-        // Tên prefix cho thread (dễ debug)
         executor.setThreadNamePrefix(threadNamePrefix);
-        
-        // Rejection policy: khi queue đầy, sẽ throw exception
         executor.setRejectedExecutionHandler(new ThreadPoolExecutor.CallerRunsPolicy());
-        
-        // Đợi tất cả task hoàn thành khi shutdown
         executor.setWaitForTasksToCompleteOnShutdown(true);
         executor.setAwaitTerminationSeconds(60);
-        
         executor.initialize();
         
         log.info("Async Task Executor configured: core={}, max={}, queue={}", 

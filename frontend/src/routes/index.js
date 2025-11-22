@@ -5,6 +5,7 @@ const Home = lazy(() => import('../pages/HomePage'));
 const Login = lazy(() => import('../features/auth/pages/LoginPage'));
 const Register = lazy(() => import('../features/auth/pages/RegisterPage'));
 const Dashboard = lazy(() => import('../features/dashboard/pages/DashboardPage'));
+const Author = lazy(() => import('../features/author/pages/AuthorPage'));
 const Moderator = lazy(() => import('../features/moderator/pages/ModeratorPage'));
 const Admin = lazy(() => import('../features/admin/pages/AdminPage'));
 const AdminArticleEdit = lazy(() => import('../features/admin/pages/AdminArticleEditPage'));
@@ -38,6 +39,12 @@ export const routes = [
     path: '/me',
     element: Dashboard,
     protected: true
+  },
+  {
+    path: '/author',
+    element: Author,
+    protected: true,
+    requiredRoles: ['AUTHOR'] // Chỉ AUTHOR có thể truy cập
   },
   {
     path: '/moderator',

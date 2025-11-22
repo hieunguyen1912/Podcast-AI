@@ -1,5 +1,6 @@
 import apiClient from '../../services/axiosClient';
 import { API_ENDPOINTS } from '../../constants/apiEndpoints';
+import adminService from '../admin/api';
 
 
 const articleService = {
@@ -977,6 +978,102 @@ const articleService = {
         status: error.response?.status
       };
     }
+  },
+
+  /**
+   * Approve an article (for MODERATOR/ADMIN with ARTICLE_APPROVE permission)
+   * Reuses adminService.approveArticle() since MODERATOR and ADMIN use the same endpoint
+   * @param {string|number} id - Article ID
+   * @returns {Promise<Object>} API response
+   */
+  async approveArticle(id) {
+    return adminService.approveArticle(id);
+  },
+
+  /**
+   * Reject an article (for MODERATOR/ADMIN with ARTICLE_APPROVE permission)
+   * Reuses adminService.rejectArticle() since MODERATOR and ADMIN use the same endpoint
+   * @param {string|number} id - Article ID
+   * @param {string} rejectionReason - Rejection reason (required, 10-1000 characters)
+   * @returns {Promise<Object>} API response
+   */
+  async rejectArticle(id, rejectionReason) {
+    return adminService.rejectArticle(id, rejectionReason);
+  },
+
+  // ========== Article Management (using admin endpoints) ==========
+  // Moderator uses the same endpoints as Admin for article management
+
+  /**
+   * Get all articles with filters (for MODERATOR - uses admin endpoint)
+   * @param {Object} params - Query parameters
+   * @param {number} params.page - Page number (default: 0)
+   * @param {number} params.size - Page size (default: 10)
+   * @param {string} params.sortBy - Sort field (default: 'createdAt')
+   * @param {string} params.sortDirection - Sort direction: 'asc' or 'desc' (default: 'desc')
+   * @param {string} params.status - Filter by status: 'DRAFT', 'PENDING_REVIEW', 'APPROVED', 'REJECTED'
+   * @param {string} params.categoryName - Filter by category name (partial match)
+   * @param {string} params.authorName - Filter by author username (partial match)
+   * @returns {Promise<Object>} API response
+   */
+  async getAllArticles(params = {}) {
+    return adminService.getAllArticles(params);
+  },
+
+  /**
+   * Get pending articles (for MODERATOR - uses admin endpoint)
+   * @param {Object} params - Query parameters (page, size, sortBy, sortDirection)
+   * @returns {Promise<Object>} API response
+   */
+  async getPendingArticles(params = {}) {
+    return adminService.getPendingArticles(params);
+  },
+
+  /**
+   * Get approved articles (for MODERATOR - uses admin endpoint)
+   * @param {Object} params - Query parameters (page, size, sortBy, sortDirection)
+   * @returns {Promise<Object>} API response
+   */
+  async getApprovedArticles(params = {}) {
+    return adminService.getApprovedArticles(params);
+  },
+
+  /**
+   * Get rejected articles (for MODERATOR - uses admin endpoint)
+   * @param {Object} params - Query parameters (page, size, sortBy, sortDirection)
+   * @returns {Promise<Object>} API response
+   */
+  async getRejectedArticles(params = {}) {
+    return adminService.getRejectedArticles(params);
+  },
+
+  /**
+   * Get article by ID (for MODERATOR - uses admin endpoint)
+   * @param {string|number} id - Article ID
+   * @returns {Promise<Object>} API response
+   */
+  async getArticleByIdAdmin(id) {
+    return adminService.getArticleById(id);
+  },
+
+  /**
+   * Update article (for MODERATOR - uses admin endpoint)
+   * @param {string|number} id - Article ID
+   * @param {Object} data - Article data to update
+   * @param {File} featuredImageFile - Featured image file for upload (optional)
+   * @returns {Promise<Object>} API response
+   */
+  async updateArticleAdmin(id, data = {}, featuredImageFile = null) {
+    return adminService.updateArticle(id, data, featuredImageFile);
+  },
+
+  /**
+   * Delete article (for MODERATOR - uses admin endpoint)
+   * @param {string|number} id - Article ID
+   * @returns {Promise<Object>} API response
+   */
+  async deleteArticleAdmin(id) {
+    return adminService.deleteArticle(id);
   }
 };
 

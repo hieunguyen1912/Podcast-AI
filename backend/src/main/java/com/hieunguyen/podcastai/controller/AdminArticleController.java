@@ -31,7 +31,7 @@ public class AdminArticleController {
     private final ArticleService articleService;
 
     @GetMapping("/pending-review")
-    @PreAuthorize("hasRole('ADMIN')")
+    @PreAuthorize("hasAuthority('PERMISSION_ARTICLE_READ')")
     public ResponseEntity<ApiResponse<PaginatedResponse<NewsArticleSummaryResponse>>> getPendingReviewArticles(
                 @RequestParam(defaultValue = "0") int page,
                 @RequestParam(defaultValue = "10") int size,
@@ -50,7 +50,7 @@ public class AdminArticleController {
     }
 
     @PostMapping("/{id}/approve")
-    @PreAuthorize("hasRole('ADMIN')")
+    @PreAuthorize("hasAuthority('PERMISSION_ARTICLE_APPROVE')")
     public ResponseEntity<ApiResponse<NewsArticleSummaryResponse>> approveArticle(@PathVariable Long id) {
         log.info("Approving article with ID: {}", id);
         
@@ -60,7 +60,7 @@ public class AdminArticleController {
     }
 
     @PostMapping("/{id}/reject")
-    @PreAuthorize("hasRole('ADMIN')")
+    @PreAuthorize("hasAuthority('PERMISSION_ARTICLE_APPROVE')")
     public ResponseEntity<ApiResponse<NewsArticleSummaryResponse>> rejectArticle(
             @PathVariable Long id,
             @Valid @RequestBody RejectArticleRequest request) {
@@ -72,7 +72,7 @@ public class AdminArticleController {
     }
 
     @GetMapping("/all")
-    @PreAuthorize("hasRole('ADMIN')")
+    @PreAuthorize("hasAuthority('PERMISSION_ARTICLE_READ')")
     public ResponseEntity<ApiResponse<PaginatedResponse<NewsArticleSummaryResponse>>> getAllArticles(
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "10") int size,
@@ -95,7 +95,7 @@ public class AdminArticleController {
     }
 
     @GetMapping("/{id}")
-    @PreAuthorize("hasRole('ADMIN')")
+    @PreAuthorize("hasAuthority('PERMISSION_ARTICLE_READ')")
     public ResponseEntity<ApiResponse<NewsArticleResponse>> getArticleById(@PathVariable Long id) {
         log.info("Admin getting article with ID: {}", id);
         
@@ -105,7 +105,7 @@ public class AdminArticleController {
     }
 
     @GetMapping("/approved")
-    @PreAuthorize("hasRole('ADMIN')")
+    @PreAuthorize("hasAuthority('PERMISSION_ARTICLE_READ')")
     public ResponseEntity<ApiResponse<PaginatedResponse<NewsArticleSummaryResponse>>> getApprovedArticles(
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "10") int size,
@@ -124,7 +124,7 @@ public class AdminArticleController {
     }
 
     @GetMapping("/rejected")
-    @PreAuthorize("hasRole('ADMIN')")
+    @PreAuthorize("hasAuthority('PERMISSION_ARTICLE_READ')")
     public ResponseEntity<ApiResponse<PaginatedResponse<NewsArticleSummaryResponse>>> getRejectedArticles(
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "10") int size,
@@ -143,7 +143,7 @@ public class AdminArticleController {
     }
 
     @GetMapping("/drafts")
-    @PreAuthorize("hasRole('ADMIN')")
+    @PreAuthorize("hasAuthority('PERMISSION_ARTICLE_READ')")
     public ResponseEntity<ApiResponse<PaginatedResponse<NewsArticleSummaryResponse>>> getDraftArticles(
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "10") int size,
@@ -162,7 +162,7 @@ public class AdminArticleController {
     }
 
     @DeleteMapping("/{id}")
-    @PreAuthorize("hasRole('ADMIN')")
+    @PreAuthorize("hasAuthority('PERMISSION_ARTICLE_DELETE')")
     public ResponseEntity<ApiResponse<Void>> deleteArticle(@PathVariable Long id) {
         log.info("Admin deleting article with ID: {}", id);
         
@@ -172,7 +172,7 @@ public class AdminArticleController {
     }
 
     @PutMapping(value = "/{id}", consumes = MediaType.APPLICATION_JSON_VALUE)
-    @PreAuthorize("hasRole('ADMIN')")
+    @PreAuthorize("hasAuthority('PERMISSION_ARTICLE_UPDATE')")
     public ResponseEntity<ApiResponse<NewsArticleResponse>> updateArticleJson(
             @PathVariable Long id,
             @Valid @RequestBody UpdateArticleRequest request) {
@@ -184,7 +184,7 @@ public class AdminArticleController {
     }
 
     @PutMapping(value = "/{id}", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
-    @PreAuthorize("hasRole('ADMIN')")
+    @PreAuthorize("hasAuthority('PERMISSION_ARTICLE_UPDATE')")
     public ResponseEntity<ApiResponse<NewsArticleResponse>> updateArticleMultipart(
             @PathVariable Long id,
             @RequestPart(value = "data") @Valid UpdateArticleRequest request,

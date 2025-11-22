@@ -24,7 +24,7 @@ public class PermissionController {
     private final PermissionService permissionService;
 
     @GetMapping
-    @PreAuthorize("hasRole('ADMIN')")
+    @PreAuthorize("hasAuthority('PERMISSION_PERMISSION_READ')")
     public ResponseEntity<ApiResponse<Page<PermissionDto>>> getAllPermissions(
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "10") int size,
@@ -43,7 +43,7 @@ public class PermissionController {
     }
 
     @GetMapping("/all")
-    @PreAuthorize("hasRole('ADMIN')")
+    @PreAuthorize("hasAuthority('PERMISSION_PERMISSION_READ')")
     public ResponseEntity<ApiResponse<List<PermissionDto>>> getAllPermissionsList() {
         log.info("Getting all permissions (without pagination)");
         
@@ -53,7 +53,7 @@ public class PermissionController {
     }
 
     @GetMapping("/{id}")
-    @PreAuthorize("hasRole('ADMIN')")
+    @PreAuthorize("hasAuthority('PERMISSION_PERMISSION_READ')")
     public ResponseEntity<ApiResponse<PermissionDto>> getPermissionById(@PathVariable Long id) {
         log.info("Getting permission by ID: {}", id);
         

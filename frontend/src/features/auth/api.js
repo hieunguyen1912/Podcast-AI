@@ -117,18 +117,30 @@ export const authService = {
 
   /**
    * Refresh authentication token
-   * RefreshToken is automatically sent via cookies by the browser
+   * Supports both cookie-based (default) and body-based refresh token
+   * Based on FRONTEND_API_DOCUMENTATION.md
+   * @param {string} refreshToken - Optional refresh token (if not using cookies)
    * @returns {Promise<Object>} API response with new token
    */
-  async refreshToken() {
+  async refreshToken(refreshToken = null) {
     try {
-      const response = await apiClient.post('/auth/refresh');
+      // If refreshToken is provided, send it in body (per documentation)
+      // Otherwise, rely on cookies (withCredentials: true)
+      const requestBody = refreshToken ? { refreshToken } : {};
+      const response = await apiClient.post('/auth/refresh', requestBody);
       
+      // Response format: { code: 2000, status: 200, message: "...", data: { accessToken, refreshToken }, timestamp: "..." }
+      // After interceptor: response.data = { accessToken, refreshToken }
       if (response.data && response.data.accessToken) {
-        const { accessToken, expiresIn } = response.data;
+        const { accessToken, refreshToken: newRefreshToken, expiresIn } = response.data;
         
         if (accessToken) {
           tokenManager.setToken(accessToken, expiresIn);
+        }
+        
+        // Store new refresh token if provided (for body-based refresh)
+        if (newRefreshToken && refreshToken) {
+          localStorage.setItem('refreshToken', newRefreshToken);
         }
         
         return {

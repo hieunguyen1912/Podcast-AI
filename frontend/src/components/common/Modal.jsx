@@ -7,19 +7,6 @@ import React, { useEffect } from 'react';
 import { X } from 'lucide-react';
 import Button from './Button';
 
-/**
- * Modal component
- * @param {Object} props
- * @param {boolean} props.isOpen - Is modal open
- * @param {Function} props.onClose - Close handler
- * @param {string} props.title - Modal title
- * @param {React.ReactNode} props.children - Modal content
- * @param {React.ReactNode} props.footer - Modal footer content
- * @param {string} props.size - Modal size: 'sm' | 'md' | 'lg' | 'xl' | 'full'
- * @param {boolean} props.closeOnOverlay - Close when clicking overlay
- * @param {boolean} props.showCloseButton - Show close button
- * @param {string} props.className - Additional CSS classes
- */
 function Modal({
   isOpen,
   onClose,

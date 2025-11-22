@@ -21,7 +21,7 @@ public class AdminStatsController {
     private final AdminStatsService adminStatsService;
 
     @GetMapping("/dashboard")
-    @PreAuthorize("hasRole('ADMIN')")
+    @PreAuthorize("hasAuthority('PERMISSION_STATS_READ')")
     public ResponseEntity<ApiResponse<DashboardStatsResponse>> getDashboardStats() {
         log.info("Getting dashboard stats for admin");
         DashboardStatsResponse stats = adminStatsService.getDashboardStats();
@@ -29,7 +29,7 @@ public class AdminStatsController {
     }
 
     @GetMapping("/articles")
-    @PreAuthorize("hasRole('ADMIN')")
+    @PreAuthorize("hasAuthority('PERMISSION_STATS_READ')")
     public ResponseEntity<ApiResponse<ArticleStatsResponse>> getArticleStats(
             @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate fromDate,
             @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate toDate) {
@@ -39,7 +39,7 @@ public class AdminStatsController {
     }
 
     @GetMapping("/users")
-    @PreAuthorize("hasRole('ADMIN')")
+    @PreAuthorize("hasAuthority('PERMISSION_STATS_READ')")
     public ResponseEntity<ApiResponse<UserStatsResponse>> getUserStats() {
         log.info("Getting user stats");
         UserStatsResponse stats = adminStatsService.getUserStats();
@@ -47,7 +47,7 @@ public class AdminStatsController {
     }
 
     @GetMapping("/articles/pending-review")
-    @PreAuthorize("hasRole('ADMIN')")
+    @PreAuthorize("hasAuthority('PERMISSION_STATS_READ')")
     public ResponseEntity<ApiResponse<PendingReviewStatsResponse>> getPendingReviewStats() {
         log.info("Getting pending review stats");
         PendingReviewStatsResponse stats = adminStatsService.getPendingReviewStats();
@@ -55,7 +55,7 @@ public class AdminStatsController {
     }
 
     @GetMapping("/articles/trends")
-    @PreAuthorize("hasRole('ADMIN')")
+    @PreAuthorize("hasAuthority('PERMISSION_STATS_READ')")
     public ResponseEntity<ApiResponse<ArticleTrendsResponse>> getArticleTrends(
             @RequestParam(defaultValue = "7") int days) {
         log.info("Getting article trends for last {} days", days);
@@ -64,7 +64,7 @@ public class AdminStatsController {
     }
 
     @GetMapping("/top-authors")
-    @PreAuthorize("hasRole('ADMIN')")
+    @PreAuthorize("hasAuthority('PERMISSION_STATS_READ')")
     public ResponseEntity<ApiResponse<TopAuthorsResponse>> getTopAuthors(
             @RequestParam(defaultValue = "10") int limit) {
         log.info("Getting top {} authors", limit);
@@ -73,7 +73,7 @@ public class AdminStatsController {
     }
 
     @GetMapping("/engagement")
-    @PreAuthorize("hasRole('ADMIN')")
+    @PreAuthorize("hasAuthority('PERMISSION_STATS_READ')")
     public ResponseEntity<ApiResponse<EngagementStatsResponse>> getEngagementStats() {
         log.info("Getting engagement stats");
         EngagementStatsResponse stats = adminStatsService.getEngagementStats();

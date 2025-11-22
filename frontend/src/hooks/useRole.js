@@ -5,6 +5,7 @@
 
 import { useMemo } from 'react';
 import { useAuth } from '../context/AuthContext';
+import { ROLE_PERMISSIONS } from '../constants/permissions';
 
 /**
  * Hook để kiểm tra roles và permissions của user
@@ -24,10 +25,24 @@ export function useRole(requiredRoles = null, requiredPermissions = null) {
   }, [user]);
 
   const permissions = useMemo(() => {
-    if (!user || !user.roles) return [];
-    // Lấy tất cả permissions từ các roles
+    if (!user) return [];
+    
     const allPermissions = [];
-    if (Array.isArray(user.roles)) {
+    
+    // Hỗ trợ permissions trực tiếp từ user.permissions (backend có thể trả về như vậy)
+    if (user.permissions && Array.isArray(user.permissions)) {
+      user.permissions.forEach(permission => {
+        const permCode = typeof permission === 'string' 
+          ? permission 
+          : permission.code || permission.name;
+        if (permCode && !allPermissions.includes(permCode)) {
+          allPermissions.push(permCode);
+        }
+      });
+    }
+    
+    // Lấy permissions từ các roles (nếu có)
+    if (user.roles && Array.isArray(user.roles)) {
       user.roles.forEach(role => {
         if (role.permissions && Array.isArray(role.permissions)) {
           role.permissions.forEach(permission => {
@@ -41,6 +56,23 @@ export function useRole(requiredRoles = null, requiredPermissions = null) {
         }
       });
     }
+    
+    // Fallback: Luôn merge với ROLE_PERMISSIONS mapping để đảm bảo permissions đầy đủ
+    // Điều này giúp xử lý trường hợp backend chưa trả về permissions đầy đủ
+    // hoặc chỉ trả về một phần permissions
+    if (user.roles && Array.isArray(user.roles)) {
+      user.roles.forEach(role => {
+        const roleCode = typeof role === 'string' ? role : role.code || role.name;
+        if (roleCode && ROLE_PERMISSIONS[roleCode]) {
+          ROLE_PERMISSIONS[roleCode].forEach(perm => {
+            if (!allPermissions.includes(perm)) {
+              allPermissions.push(perm);
+            }
+          });
+        }
+      });
+    }
+    
     return allPermissions;
   }, [user]);
 

@@ -7,6 +7,7 @@ import org.springframework.http.HttpMethod;
 import org.springframework.security.authentication.AbstractAuthenticationToken;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.config.annotation.authentication.configuration.AuthenticationConfiguration;
+import org.springframework.security.config.annotation.method.configuration.EnableMethodSecurity;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.config.http.SessionCreationPolicy;
@@ -36,6 +37,7 @@ import lombok.extern.slf4j.Slf4j;
 
 @Configuration
 @EnableWebSecurity
+@EnableMethodSecurity(prePostEnabled = true)
 @RequiredArgsConstructor
 @Slf4j
 public class SecurityConfig {
@@ -49,15 +51,32 @@ public class SecurityConfig {
     public static final MacAlgorithm JWT_ALGORITHM = MacAlgorithm.HS256;
 
     private final String[] publicEndpoints = {
+        // Auth endpoints
         "/api/v1/auth/register", "/api/v1/auth/login",
-        "/api/v1/auth/refresh", "/api/v1/auth/revoke", "api/v1/images/**",
-        "/api/v1/news/**", "/api/v1/categories/tree", "/api/v1/categories/root",
+        "/api/v1/auth/refresh", "/api/v1/auth/revoke",
+        
+        // Images
+        "/api/v1/images/**",
+        
+        // News endpoints (public - all methods)
+        "/api/v1/news/**",
+        
+        // Article audio endpoints (public - for streaming/downloading audio)
+        "/api/v1/articles/*/audio",
+        "/api/v1/articles/audio/*/stream",
+        "/api/v1/articles/audio/*/download",
+        
+        // WebSocket
         "/ws/**",
+        
+        // Swagger/API docs
         "/swagger-ui/**",
         "/v3/api-docs/**",
         "/swagger-ui.html",
         "/swagger-resources/**",
         "/webjars/**",
+        
+        // Other
         "/error",
         "/actuator/**",
         "/favicon.ico"
@@ -71,6 +90,13 @@ public class SecurityConfig {
             .logout(logout -> logout.disable())
             .authorizeHttpRequests(auth -> auth
                 .requestMatchers(publicEndpoints).permitAll()
+                // Public GET endpoints for guest users (read-only access)
+                .requestMatchers(HttpMethod.GET, "/api/v1/categories/**").permitAll()
+                .requestMatchers(HttpMethod.GET, "/api/v1/articles/{id}").permitAll()
+                .requestMatchers(HttpMethod.GET, "/api/v1/articles/{id}/category").permitAll()
+                .requestMatchers(HttpMethod.GET, "/api/v1/comments/articles/{articleId}").permitAll()
+                .requestMatchers(HttpMethod.GET, "/api/v1/comments/{commentId}/replies").permitAll()
+                .requestMatchers(HttpMethod.GET, "/api/v1/articles/audio/**").permitAll()
                 .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
                 .anyRequest().authenticated()
             )   
